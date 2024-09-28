@@ -18,7 +18,7 @@ const previousResponses = new Map(); // Map to store previous responses for each
 async function onCall({ message, args }) {
     if (!args.length) {
         // Sending the message when the query is empty
-        message.reply("👩‍💻✨ | 𝙶𝚎𝚖𝚒𝚗𝚒\n━━━━━━━━━━━━━━━━\nHello! How can I help you today?\n━━━━━━━━━━━━━━━━");
+        message.send("👩‍💻✨ | 𝙶𝚎𝚖𝚒𝚗𝚒\n━━━━━━━━━━━━━━━━\nHello! How can I help you today?\n━━━━━━━━━━━━━━━━");
         return;
     }
 
