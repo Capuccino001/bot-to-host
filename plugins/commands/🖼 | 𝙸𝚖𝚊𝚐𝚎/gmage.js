@@ -9,48 +9,39 @@ const config = {
 };
 
 const API_URL = "https://openapi-idk8.onrender.com/google/image";
-const REACTION_PROCESSING = "🕰️";
-const REACTION_SUCCESS = "✅";
-const REACTION_ERROR = "❎";
 const DEFAULT_COUNT = 12; // Always fetch 12 images
 
 async function onCall({ message, args }) {
     const userSearchTerm = args.join(" ");
 
-    if (!userSearchTerm) {
-        return message.reply("Please provide a search term.");
-    }
+    if (!userSearchTerm) return message.reply("Please provide a search term.");
 
-    await message.react(REACTION_PROCESSING); // Indicate processing
-
-    const apiUrl = `${API_URL}?search=${encodeURIComponent(userSearchTerm)}&count=${DEFAULT_COUNT}`;
+    await message.react("🕰️"); // Indicate processing
 
     try {
-        const response = await fetch(apiUrl);
+        const response = await fetch(`${API_URL}?search=${encodeURIComponent(userSearchTerm)}&count=${DEFAULT_COUNT}`);
+        const data = await response.json();
 
-        if (!response.ok) {
-            const errorResponse = await response.json();
-            throw new Error(errorResponse.error || "Failed to fetch data");
+        if (!response.ok || !data.images?.length) {
+            const errorMessage = data.error || "No images found for your search.";
+            throw new Error(errorMessage);
         }
 
-        const { images = [] } = await response.json();
+        const attachments = data.images.map(img => ({
+            attachment: img.url,
+            name: `${userSearchTerm}_${img.url.split('/').pop()}`,
+        }));
 
-        if (images.length === 0) {
-            await message.reply("No images found for your search.");
-        } else {
-            const attachments = images.map(img => ({ attachment: img.url, name: `${userSearchTerm}_${img.url.split('/').pop()}` }));
+        await message.reply({
+            content: `Here are the images for "${userSearchTerm}":`,
+            files: attachments,
+        });
 
-            await message.reply({
-                content: `Here are the images for "${userSearchTerm}":`,
-                files: attachments,
-            });
-        }
-
-        await message.react(REACTION_SUCCESS); // React with ✅ on success
+        await message.react("✅"); // Success reaction
     } catch (error) {
         console.error(error);
-        await message.react(REACTION_ERROR); // React with ❎ on error
-        await message.reply(`An error occurred: ${error.message || "Unable to fetch images."}`); // Provide error context
+        await message.react("❎"); // Error reaction
+        await message.reply(`An error occurred: ${error.message}`);
     }
 }
 
