@@ -3,11 +3,11 @@ import axios from 'axios';
 const config = {
     name: "gemini",
     aliases: ["bard"],
-    description: "Ask a question to the Google Gemini.",
+    description: Interact with Google Gemini.",
     usage: "[query]",
     category: "𝙴𝚍𝚞𝚌𝚊𝚝𝚒𝚘𝚗",
     cooldown: 3,
-    permissions: [0, 1, 2],
+    permissions: [0],
     isAbsolute: false,
     isHidden: false,
     credits: "RN",
@@ -16,12 +16,8 @@ const config = {
 const previousResponses = new Map(); // Map to store previous responses for each user
 
 async function onCall({ message, args }) {
-    if (!args.length) {
-        message.reply("👩‍💻✨ | 𝙶𝚎𝚖𝚒𝚗𝚒 \n━━━━━━━━━━━━━━━━\nHello! How can I assist you today?\n━━━━━━━━━━━━━━━━");
-        return;
-    }
-
-    let query = args.join(" ");
+    // Use "hi" as the default query if no arguments are provided
+    let query = args.length ? args.join(" ") : "hi";
     const id = message.senderID;
     const previousResponse = previousResponses.get(id); // Get the previous response for the user
 
