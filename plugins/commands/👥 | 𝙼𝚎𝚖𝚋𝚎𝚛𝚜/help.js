@@ -8,10 +8,10 @@ const config = {
 };
 
 function getCommandName(commandName) {
-    return global.plugins.commandsAliases.has(commandName) 
-        ? commandName 
-        : Array.from(global.plugins.commandsAliases).find(([key, aliases]) => aliases.includes(commandName))?.[0] 
-        || null;
+    if (global.plugins.commandsAliases.has(commandName)) {
+        return commandName;
+    }
+    return Array.from(global.plugins.commandsAliases).find(([, aliases]) => aliases.includes(commandName))?.[0] || null;
 }
 
 async function onCall({ message, args, userPermissions, prefix }) {
@@ -23,7 +23,10 @@ async function onCall({ message, args, userPermissions, prefix }) {
         const commands = {};
 
         for (const [key, value] of commandsConfig.entries()) {
-            if (value.isHidden || (value.isAbsolute && !global.config?.ABSOLUTES.includes(message.senderID)) || !value.permissions?.some(p => userPermissions.includes(p))) continue;
+            // Check for command visibility and permissions
+            if (value.isHidden || (value.isAbsolute && !global.config?.ABSOLUTES.includes(message.senderID)) || !value.permissions?.some(p => userPermissions.includes(p))) {
+                continue;
+            }
             const category = commands[value.category] || (commands[value.category] = []);
             category.push(`- ${value._name?.[language] || key}`);
         }
@@ -52,9 +55,9 @@ Chat -𝚑𝚎𝚕𝚙 <command name>
 `);
     }
 
-    const command = commandsConfig.get(getCommandName(commandName, commandsConfig));
+    const command = commandsConfig.get(getCommandName(commandName));
     if (!command || command.isHidden || (command.isAbsolute && !global.config?.ABSOLUTES.includes(message.senderID)) || !command.permissions.some(p => userPermissions.includes(p))) {
-        return message.reply(`Command ${commandName} does not exist.`);
+        return message.reply(`Command ${commandName} does not exist or you do not have permission to access it.`);
     }
 
     message.reply(`
