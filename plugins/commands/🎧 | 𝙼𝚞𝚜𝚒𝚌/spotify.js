@@ -16,19 +16,18 @@ const config = {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const cacheFolder = __dirname + '/cache';
+const cacheFolder = `${__dirname}/cache`;
 
-// Function to create the cache folder if it doesn't exist
-async function ensureCacheFolderExists() {
+// Ensure the cache folder exists
+const ensureCacheFolderExists = async () => {
     try {
         await fs.ensureDir(cacheFolder);
     } catch (error) {
         console.error('Error creating cache folder:', error);
     }
-}
+};
 
-async function onCall({ message, args, getLang }) {
-    const { messageID, threadID } = message;
+const onCall = async ({ message, args, getLang }) => {
     const { songTitle, artist } = getSongTitleAndArtist(args);
 
     if (!songTitle) {
@@ -36,27 +35,11 @@ async function onCall({ message, args, getLang }) {
     }
 
     try {
-        // Ensure that the cache folder exists
         await ensureCacheFolderExists();
-
         await message.react("⌛");
 
-        // Array of services to fetch track URLs
-        const services = [
-            { url: 'https://spotify-play-iota.vercel.app/spotify', params: { query: songTitle } },
-            { url: 'http://zcdsphapilist.replit.app/spotify', params: { q: songTitle } },
-            { url: 'https://samirxpikachuio.onrender.com/spotifysearch', params: { q: songTitle } },
-            { url: 'https://openapi-idk8.onrender.com/search-song', params: { song: songTitle } },
-            { url: 'https://markdevs-last-api.onrender.com/search/spotify', params: { q: songTitle } }
-        ];
-
-        // Fetch track URLs from multiple services
-        const trackURLs = await fetchTrackURLs(services);
-        const trackID = trackURLs[0];
-
-        // Fetch download link for the selected track ID
-        const downloadResponse = await axios.get(`https://sp-dl-bice.vercel.app/spotify?id=${encodeURIComponent(trackID)}`);
-        const downloadLink = downloadResponse.data.download_link;
+        const trackURLs = await fetchTrackURLs(songTitle);
+        const downloadLink = await fetchDownloadLink(trackURLs[0]);
 
         // Download the track and send as a reply
         const filePath = await downloadTrack(downloadLink);
@@ -66,7 +49,7 @@ async function onCall({ message, args, getLang }) {
         });
 
         // Delete the downloaded file after sending
-        fs.unlink(filePath, (err) => {
+        fs.unlink(filePath, err => {
             if (err) console.error("Error deleting file:", err);
             else console.log("File deleted successfully.");
         });
@@ -76,59 +59,63 @@ async function onCall({ message, args, getLang }) {
         console.error("Error occurred:", error);
         await message.send(header + `An error occurred: ${error.message}` + footer);
     }
-}
+};
 
-function getSongTitleAndArtist(args) {
-    let songTitle, artist;
-
+const getSongTitleAndArtist = (args) => {
     const byIndex = args.indexOf("by");
-    if (byIndex !== -1 && byIndex > 0 && byIndex < args.length - 1) {
-        songTitle = args.slice(0, byIndex).join(" ");
-        artist = args.slice(byIndex + 1).join(" ");
-    } else {
-        songTitle = args.join(" ");
-    }
+    const songTitle = byIndex !== -1 && byIndex > 0 && byIndex < args.length - 1
+        ? args.slice(0, byIndex).join(" ")
+        : args.join(" ");
+    const artist = byIndex !== -1 ? args.slice(byIndex + 1).join(" ") : undefined;
 
     return { songTitle, artist };
-}
+};
 
-async function fetchTrackURLs(services) {
-    for (const service of services) {
+const fetchTrackURLs = async (songTitle) => {
+    const services = [
+        { url: 'https://spotify-play-iota.vercel.app/spotify', params: { query: songTitle } },
+        { url: 'http://zcdsphapilist.replit.app/spotify', params: { q: songTitle } },
+        { url: 'https://samirxpikachuio.onrender.com/spotifysearch', params: { q: songTitle } },
+        { url: 'https://openapi-idk8.onrender.com/search-song', params: { song: songTitle } },
+        { url: 'https://markdevs-last-api.onrender.com/search/spotify', params: { q: songTitle } }
+    ];
+
+    for (const { url, params } of services) {
         try {
-            const response = await axios.get(service.url, { params: service.params });
-
+            const response = await axios.get(url, { params });
             if (response.data.trackURLs && response.data.trackURLs.length > 0) {
-                console.log(`Track URLs fetched from ${service.url}`);
+                console.log(`Track URLs fetched from ${url}`);
                 return response.data.trackURLs;
-            } else {
-                console.log(`No track URLs found at ${service.url}`);
             }
+            console.log(`No track URLs found at ${url}`);
         } catch (error) {
-            console.error(`Error with ${service.url} API:`, error.message);
+            console.error(`Error with ${url} API:`, error.message);
         }
     }
 
     throw new Error("No track URLs found from any API.");
-}
+};
 
-async function downloadTrack(url) {
+const fetchDownloadLink = async (trackID) => {
+    const response = await axios.get(`https://sp-dl-bice.vercel.app/spotify?id=${encodeURIComponent(trackID)}`);
+    return response.data.download_link;
+};
+
+const downloadTrack = async (url) => {
     const response = await axios.get(url, { responseType: 'stream' });
     const filePath = `${cacheFolder}/${randomString()}.mp3`;
 
-    const writeStream = fs.createWriteStream(filePath);
-    response.data.pipe(writeStream);
-
     return new Promise((resolve, reject) => {
+        const writeStream = fs.createWriteStream(filePath);
+        response.data.pipe(writeStream);
         writeStream.on('finish', () => resolve(filePath));
         writeStream.on('error', reject);
     });
-}
+};
 
-function randomString(length = 10) {
-    return Math.random().toString(36).substring(2, 2 + length);
-}
+const randomString = (length = 10) => Math.random().toString(36).substring(2, 2 + length);
 
 export default {
     config,
-    onCall
+    onCall,
 };
