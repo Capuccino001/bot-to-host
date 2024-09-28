@@ -18,12 +18,15 @@ const previousResponses = new Map(); // Map to store previous responses for each
 async function onCall({ message, args }) {
     const userId = message.senderID; // User ID
 
-    // Handle case where no query is provided
+    let userQuery;
+
+    // Check if no query is provided and assume "hi"
     if (!args.length) {
-        return message.reply("🌊✨ | 𝙲𝚘𝚙𝚒𝚗𝚘𝚕𝚝\n━━━━━━━━━━━━━━━━\nHello! How can I assist you today?\n━━━━━━━━━━━━━━━━");
+        userQuery = "hi"; // Set default query to "hi"
+    } else {
+        userQuery = args.join(" "); // Join args if there is a query
     }
 
-    const userQuery = args.join(" ");
     const previousResponse = previousResponses.get(userId); // Get the previous response for the user
 
     // Handle follow-up queries
@@ -39,9 +42,9 @@ async function onCall({ message, args }) {
         // Send request to the API with the query
         const response = await axios.get(`https://samirxpikachuio.onrender.com/bing`, {
             params: {
-                message: query,
-                mode: 1,
-                uid: userId
+                message: query, // The query message
+                mode: 1, // Set mode (you can adjust this based on your requirements)
+                uid: userId // The user ID
             }
         });
 
