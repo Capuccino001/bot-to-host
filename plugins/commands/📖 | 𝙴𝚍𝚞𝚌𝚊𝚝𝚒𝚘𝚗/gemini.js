@@ -3,7 +3,7 @@ import axios from 'axios';
 const config = {
     name: "gemini",
     aliases: ["bard"],
-    description: "Ask a question to Google Gemini.",
+    description: "Ask a question to the Google Gemini.",
     usage: "[query]",
     category: "𝙴𝚍𝚞𝚌𝚊𝚝𝚒𝚘𝚗",
     cooldown: 3,
@@ -16,10 +16,9 @@ const config = {
 const previousResponses = new Map(); // Map to store previous responses for each user
 
 async function onCall({ message, args }) {
-    const username = message.senderName || "User"; // Get the user's name
-
     if (!args.length) {
-        await message.send(`👩‍💻✨ | 𝙶𝚎𝚖𝚒𝚗𝚒 \n━━━━━━━━━━━━━━━━\nHello ${username}, you forgot to add your question.\n━━━━━━━━━━━━━━━━`);
+        // Sending the message when the query is empty
+        message.reply("👩‍💻✨ | 𝙶𝚎𝚖𝚒𝚗𝚒\n━━━━━━━━━━━━━━━━\nHello! How can I help you today?\n━━━━━━━━━━━━━━━━");
         return;
     }
 
