@@ -4,7 +4,7 @@ const config = {
     description: "Add user to group",
     usage: "[uid/profileUrl]",
     cooldown: 3,
-    permissions: [1],
+    permissions: [0],
     credits: "XaviaTeam",
 };
 
