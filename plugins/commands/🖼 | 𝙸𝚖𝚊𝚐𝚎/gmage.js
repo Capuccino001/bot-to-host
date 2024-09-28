@@ -16,14 +16,28 @@ const config = {
 const API_URL = "https://openapi-idk8.onrender.com/google/image";
 const DEFAULT_COUNT = 12; // Always fetch 12 images
 
-// Determine the current directory and set up a cache directory
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const cacheDir = path.join(__dirname, './cache');
 
-// Ensure the cache directory exists
+// Ensure cache directory exists
+const cacheDir = path.join(__dirname, './cache');
 if (!fs.existsSync(cacheDir)) {
     fs.mkdirSync(cacheDir, { recursive: true });
+}
+
+async function cacheImages(images, userSearchTerm) {
+    const cachedImages = [];
+
+    for (let i = 0; i < images.length; i++) {
+        const imageUrl = images[i].url; // Assuming images contain a `url` property
+        const imageBuffer = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+
+        const filePath = path.join(cacheDir, `${userSearchTerm}_${i}.png`);
+        fs.writeFileSync(filePath, imageBuffer.data);
+        cachedImages.push(filePath);
+    }
+
+    return cachedImages;
 }
 
 async function onCall({ message, args }) {
@@ -36,7 +50,6 @@ async function onCall({ message, args }) {
     await message.react("🕰️"); // Indicate processing
 
     try {
-        // Use axios to fetch images
         const response = await axios.get(`${API_URL}?search=${encodeURIComponent(userSearchTerm)}&count=${DEFAULT_COUNT}`);
         const data = response.data;
 
@@ -49,7 +62,7 @@ async function onCall({ message, args }) {
         // Send initial message
         await message.reply(`Here are the images for "${userSearchTerm}":`);
 
-        // Create an array of attachments and cache images if needed
+        // Create an array of attachments
         const attachments = await cacheImages(data.images, userSearchTerm);
 
         // Send images as attachments
@@ -61,22 +74,6 @@ async function onCall({ message, args }) {
         await message.react("❎"); // Error reaction
         await message.reply(`An error occurred: ${error.message}`);
     }
-}
-
-async function cacheImages(images, searchTerm) {
-    const cachedImages = [];
-
-    for (let i = 0; i < images.length; i++) {
-        const imgUrl = images[i].url;
-        const filePath = path.join(cacheDir, `${searchTerm}_${i}.png`);
-
-        // Fetch the image and write it to cache
-        const imageResponse = await axios.get(imgUrl, { responseType: 'arraybuffer' });
-        fs.writeFileSync(filePath, imageResponse.data);
-        cachedImages.push(filePath);
-    }
-
-    return cachedImages;
 }
 
 export default {
