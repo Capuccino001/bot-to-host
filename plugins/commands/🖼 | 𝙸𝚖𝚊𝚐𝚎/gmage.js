@@ -27,15 +27,16 @@ async function onCall({ message, args }) {
             throw new Error(errorMessage);
         }
 
+        // Send initial message
+        await message.reply(`Here are the images for "${userSearchTerm}":`);
+
+        // Send images as attachments in a separate message
         const attachments = data.images.map(img => ({
             attachment: img.url,
             name: `${userSearchTerm}_${img.url.split('/').pop()}`,
         }));
 
-        await message.reply({
-            content: `Here are the images for "${userSearchTerm}":`,
-            files: attachments,
-        });
+        await message.channel.send({ files: attachments }); // Send files separately
 
         await message.react("✅"); // Success reaction
     } catch (error) {
