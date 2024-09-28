@@ -14,38 +14,32 @@ const previousResponses = new Map(); // Store previous responses for each user
 
 async function onCall({ message, args }) {
     const userQuery = args.join(" ");
-    const { senderID: id, threadID } = message;
+    const { senderID: id } = message;
 
     if (!userQuery) {
-        return message.reply(
-            "👩‍💻✨ | 𝙶𝚎𝚖𝚒𝚗𝚒\n━━━━━━━━━━━━━━━━\nHello! How can I assist you today?\n━━━━━━━━━━━━━━━━"
-        );
+        return message.reply("👩‍💻✨ | 𝙶𝚎𝚖𝚒𝚗𝚒\n━━━━━━━━━━━━━━━━\nHello! How can I assist you today?\n━━━━━━━━━━━━━━━━");
     }
 
-    let query = previousResponses.has(id)
-        ? `Follow-up on: "${previousResponses.get(id)}"\nUser reply: "${userQuery}"`
-        : userQuery;
+    const previousResponse = previousResponses.get(id);
+    const query = previousResponse ? `Follow-up on: "${previousResponse}"\nUser reply: "${userQuery}"` : userQuery;
 
-    message.react("🕰️"); // Indicate processing
+    await message.react("🕰️"); // Indicate processing
 
     try {
-        const { data } = await axios.get(
-            `https://deku-rest-api.gleeze.com/gemini?prompt=${encodeURIComponent(query)}`
-        );
-
+        const { data } = await axios.get(`https://deku-rest-api.gleeze.com/gemini?prompt=${encodeURIComponent(query)}`);
+        
+        // Validate the response and respond accordingly
         if (data?.gemini) {
             previousResponses.set(id, data.gemini);
-            await message.reply(
-                `👩‍💻✨ | 𝙶𝚎𝚖𝚒𝚗𝚒\n━━━━━━━━━━━━━━━━\n${data.gemini}\n━━━━━━━━━━━━━━━━`
-            );
-            message.react("✔️"); // React with ✔️ on success
+            await message.reply(`👩‍💻✨ | 𝙶𝚎𝚖𝚒𝚗𝚒\n━━━━━━━━━━━━━━━━\n${data.gemini}\n━━━━━━━━━━━━━━━━`);
+            await message.react("✔️"); // React with ✔️ on success
         } else {
             throw new Error("Unexpected response format from API");
         }
     } catch (error) {
         console.error("API call failed:", error);
-        message.react("✖️"); // React with ✖️ on error
-        message.reply("An error occurred while fetching the data."); // Error message
+        await message.react("✖️"); // React with ✖️ on error
+        await message.reply("An error occurred while fetching the data."); // Error message
     }
 }
 
