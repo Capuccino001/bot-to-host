@@ -1,43 +1,43 @@
-import samirapi from 'samirapi'; // Import necessary API or module
+import samirapi from 'samirapi';
 
 const config = {
-    name: "exampleCommand", // Command name
-    aliases: ["example"], // Command aliases
-    description: "Description of the example command.", // Brief description
-    usage: "[query]", // Usage instructions
-    cooldown: 5, // Cooldown time in seconds
-    permissions: [1, 2], // Permissions required to use this command
-    credits: "Coffee", // Author or credits
+    name: "exampleCommand",
+    aliases: ["example"],
+    description: "Description of the example command.",
+    usage: "[query]",
+    cooldown: 5,
+    permissions: [1, 2],
+    credits: "Coffee",
 };
 
 async function onCall({ message, args }) {
-    const userId = message.senderID; // Retrieve user ID
+    const userId = message.senderID;
+
     if (!args.length) {
-        return await message.reply("Please provide a query to execute the command."); // Early return for no arguments
+        return await message.reply("❌ Please provide a query to execute the command.");
     }
 
-    const query = args.join(" "); // Join the query from arguments
+    const query = args.join(" ");
 
     try {
-        await message.react("🕰️"); // React with a clock emoji while processing
+        await message.react("🕰️");
+        const stopTypingIndicator = global.api.sendTypingIndicator(message.threadID);
+        const response = await samirapi.exampleAPI(query, userId);
 
-        const typ = global.api.sendTypingIndicator(message.threadID); // Send typing indicator
+        stopTypingIndicator();
 
-        // Send request to the API (replace with appropriate function)
-        const response = await samirapi.exampleAPI(query, userId); // Replace with actual API call
-
-        typ(); // Stop typing indicator
-
-        // Log the response for debugging
         console.log("API response: ", response);
 
-        await message.send(response); // Send the response back to the user
-        await message.react("✅"); // React with a checkmark emoji for success
+        if (response) {
+            await message.send(response);
+            await message.react("✅");
+        } else {
+            await message.send("⚠️ No response received from the API.");
+        }
     } catch (error) {
-        // Log the error for debugging
         console.error("API call failed: ", error);
-        await message.react("❎"); // React with a cross emoji for error
-        await message.send("Sorry, I couldn't execute the command. Please try again later."); // User-friendly error message
+        await message.react("❎");
+        await message.send("⚠️ Sorry, I couldn't execute the command. Please try again later.");
     }
 }
 
