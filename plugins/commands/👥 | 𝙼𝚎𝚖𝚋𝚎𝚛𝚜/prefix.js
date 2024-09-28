@@ -12,19 +12,28 @@ async function onCall({ message, args, data, prefix }) {
     const { isGroup, threadID } = message;
     const { thread } = data;
 
-    if (!isGroup) return message.reply("This command only works in group.");
-    if (!thread?.info?.threadID) return message.reply("Thread data does not exist.");
-    if (!thread.data) thread.data = {};
+    if (!isGroup) {
+        return message.reply("This command only works in groups.");
+    }
+    
+    if (!thread?.info?.threadID) {
+        return message.reply("Thread data does not exist.");
+    }
+    
+    thread.data = thread.data || {};
 
     if (!args[0]) {
         return message.reply(`Default prefix: ${global.config.PREFIX}\nCurrent prefix: ${prefix}`);
     }
 
     const newPrefix = args[0];
-    if (newPrefix.length > 5) return message.reply("Prefix must be less than 5 characters.");
+    if (newPrefix.length > 5) {
+        return message.reply("Prefix must be less than 5 characters.");
+    }
 
     await global.controllers.Threads.updateData(threadID, { prefix: newPrefix });
-    global.api.changeNickname(`[ ${newPrefix} ] ${global.config.NAME || "Xavia"}`, threadID, global.botID, (_) => {
+    
+    global.api.changeNickname(`[ ${newPrefix} ] ${global.config.NAME || "Xavia"}`, threadID, global.botID, () => {
         message.reply(`Prefix has been set to ${newPrefix}.`);
     });
 }
