@@ -14,23 +14,29 @@ const previousResponses = new Map(); // Store previous responses for each user
 
 async function onCall({ message, args }) {
     const userQuery = args.join(" ");
-    const { senderID: id } = message;
+    const userId = message.senderID; // Get user ID
 
+    // Handle case where no query is provided
     if (!userQuery) {
         return message.reply("👩‍💻✨ | 𝙶𝚎𝚖𝚒𝚗𝚒\n━━━━━━━━━━━━━━━━\nHello! How can I assist you today?\n━━━━━━━━━━━━━━━━");
     }
 
-    const previousResponse = previousResponses.get(id);
+    // Check for previous response to handle follow-ups
+    const previousResponse = previousResponses.get(userId);
     const query = previousResponse ? `Follow-up on: "${previousResponse}"\nUser reply: "${userQuery}"` : userQuery;
 
     await message.react("🕰️"); // Indicate processing
 
     try {
-        const { data } = await axios.get(`https://deku-rest-api.gleeze.com/gemini?prompt=${encodeURIComponent(query)}`);
-        
+        const { data } = await axios.get(`https://deku-rest-api.gleeze.com/gemini`, {
+            params: {
+                prompt: query
+            }
+        });
+
         // Validate the response and respond accordingly
         if (data?.gemini) {
-            previousResponses.set(id, data.gemini);
+            previousResponses.set(userId, data.gemini); // Store the latest response
             await message.reply(`👩‍💻✨ | 𝙶𝚎𝚖𝚒𝚗𝚒\n━━━━━━━━━━━━━━━━\n${data.gemini}\n━━━━━━━━━━━━━━━━`);
             await message.react("✔️"); // React with ✔️ on success
         } else {
