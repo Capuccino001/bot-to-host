@@ -16,9 +16,13 @@ const config = {
 const previousResponses = new Map(); // Map to store previous responses for each user
 
 async function onCall({ message, args }) {
+    console.log("Received message: ", message.content); // Log the incoming message content
+    console.log("Arguments: ", args); // Log the parsed arguments
+
     if (!args.length) {
-        // Sending the message when the query is empty
-        message.send("👩‍💻✨ | 𝙶𝚎𝚖𝚒𝚗𝚒\n━━━━━━━━━━━━━━━━\nHello! How can I help you today?\n━━━━━━━━━━━━━━━━");
+        // Send the message directly when the query is empty
+        console.log("Empty query detected, sending response."); // Log that an empty query was detected
+        await message.send("👩‍💻✨ | 𝙶𝚎𝚖𝚒𝚗𝚒\n━━━━━━━━━━━━━━━━\nHello! How can I help you today?\n━━━━━━━━━━━━━━━━");
         return;
     }
 
