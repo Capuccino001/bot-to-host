@@ -38,8 +38,11 @@ async function onCall({ message, args }) {
         if (images.length === 0) {
             await message.reply("No images found for your search.");
         } else {
-            const imageUrls = images.map(img => img.url).join("\n");
-            await message.reply(`Here are the images:\n${imageUrls}`); // Send back all image URLs in one message
+            const attachments = images.map(img => img.url); // Get URLs for the attachments
+            await message.reply({ 
+                content: `Here are some images for "${userSearchTerm}":`, // Updated message content
+                files: attachments // Send images as attachments
+            });
         }
 
         await message.react(REACTION_SUCCESS); // React with ✅ on success
