@@ -13,63 +13,49 @@ const config = {
     credits: "RN",
 };
 
-const previousResponses = new Map(); // Map to store previous responses for each user
+const previousResponses = new Map();
 
 async function onCall({ message, args }) {
-    const userId = message.senderID; // User ID
+    const userId = message.senderID;
 
-    let userQuery;
-
-    // Check if no query is provided and assume "hi"
     if (!args.length) {
-        userQuery = "hi"; // Set default query to "hi"
-    } else {
-        userQuery = args.join(" "); // Join args if there is a query
+        return await message.send(
+            `🌊✨ | 𝙲𝚘𝚙𝚒𝚕𝚘𝚝\n━━━━━━━━━━━━━━━━\nHello! How can I help you today? 😊\n━━━━━━━━━━━━━━━━`
+        );
     }
 
-    const previousResponse = previousResponses.get(userId); // Get the previous response for the user
+    const userQuery = args.join(" ");
+    const previousResponse = previousResponses.get(userId);
 
-    // Handle follow-up queries
     const query = previousResponse 
         ? `Follow-up on: "${previousResponse}"\nUser reply: "${userQuery}"`
         : userQuery;
 
-    await message.react("🕰️"); // Indicate processing
+    await message.react("🕰️");
 
     try {
-        const typingIndicator = global.api.sendTypingIndicator(message.threadID); // Start typing indicator
+        const typingIndicator = global.api.sendTypingIndicator(message.threadID);
 
-        // Send request to the API with the query
         const response = await axios.get(`https://samirxpikachuio.onrender.com/bing`, {
             params: {
-                message: query, // The query message
-                mode: 1, // Set mode (you can adjust this based on your requirements)
-                uid: userId // The user ID
+                message: query,
+                mode: 1,
+                uid: userId
             }
         });
 
-        typingIndicator(); // Stop typing indicator
+        typingIndicator();
 
-        // Log the response to check its structure
-        console.log("API response: ", response.data);
+        const copilotResponse = response.data;
 
-        // Extract the response directly from the API response
-        const copilotResponse = response.data; // Update if the structure is different
-
-        // Log the message being sent for debugging
-        console.log(`Sending message: ${copilotResponse}`);
-
-        // Send the extracted message to the user
         await message.send(`🌊✨ | 𝙲𝚘𝚙𝚒𝚕𝚘𝚝\n━━━━━━━━━━━━━━━━\n${copilotResponse}\n━━━━━━━━━━━━━━━━`);
 
-        // Store the response for follow-up
         previousResponses.set(userId, copilotResponse);
-        await message.react("✔️"); // React with ✔️ on success
+        await message.react("✔️");
     } catch (error) {
-        // Log the error for debugging
         console.error("API call failed: ", error);
-        await message.react("✖️"); // React with ✖️ on error
-        await message.send("❌ | An error occurred while trying to reach the Bing Copilot."); // Error message
+        await message.react("✖️");
+        await message.send("❌ | An error occurred while trying to reach the Bing Copilot.");
     }
 }
 
