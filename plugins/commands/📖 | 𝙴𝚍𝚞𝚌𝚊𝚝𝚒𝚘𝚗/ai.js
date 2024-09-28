@@ -6,7 +6,7 @@ const config = {
     description: "Interact with the GPT-4 Mini API",
     usage: "[query]",
     cooldown: 5,
-    permissions: [1, 2],
+    permissions: [0],
     credits: "Coffee",
 };
 
