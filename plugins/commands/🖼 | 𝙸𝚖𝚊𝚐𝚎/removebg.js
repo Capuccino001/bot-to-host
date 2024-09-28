@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const cachePath = './plugins/commands/cache';
+const cachePath = path.join(__dirname, './plugins/commands/cache');
 
 const config = {
     name: "removebg",
@@ -20,29 +20,42 @@ const config = {
 async function onCall({ message }) {
     const reply = message.messageReply;
 
-    if (!reply?.attachments?.length) {
-        return message.reply("Please reply to an image message to remove its background.");
+    if (!reply || !reply.attachments || reply.attachments.length === 0) {
+        return message.reply("📷 Please reply to an image message to remove its background.");
     }
 
-    if (reply.attachments[0].type !== "photo") {
-        return message.reply("This is not a photo.");
+    const attachment = reply.attachments[0];
+    
+    if (attachment.type !== "photo") {
+        return message.reply("❌ This is not a photo.");
     }
 
     try {
-        const imageUrl = reply.attachments[0].url;
+        const imageUrl = attachment.url;
         const imageBuffer = await samirapi.remBackground(imageUrl);
         const filePath = path.join(cachePath, 'no_background.png');
 
+        // Ensure the cache directory exists
+        await fs.ensureDir(cachePath);
+
+        // Save the image with the background removed
         await fs.outputFile(filePath, imageBuffer);
+
+        // Send the enhanced image as a reply
         await message.reply({
-            body: "Here is the image with the background removed",
+            body: "✨ Here is the image with the background removed:",
             attachment: fs.createReadStream(filePath)
         });
-
-        await fs.unlink(filePath);
     } catch (error) {
         console.error(error);
-        return message.reply("An error occurred while executing the command.");
+        return message.reply("⚠️ An error occurred while removing the background. Please try again later.");
+    } finally {
+        // Cleanup the cached file if it exists
+        try {
+            await fs.unlink(filePath);
+        } catch (cleanupError) {
+            console.error("Cleanup failed:", cleanupError);
+        }
     }
 }
 
