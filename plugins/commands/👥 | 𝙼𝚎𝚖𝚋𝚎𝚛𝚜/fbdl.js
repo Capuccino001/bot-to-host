@@ -1,40 +1,73 @@
+import axios from 'axios';
+import fs from 'fs';
+
 const config = {
     name: "fbdl",
-    aliases: ["fbdownloader", "fbvid"],
-    description: "Download Facebook reels or videos by providing the URL.",
-    usage: "[Facebook video URL]",
+    aliases: ["fbdown", "facebookdl"],
+    description: "Download Facebook reels by providing the reel URL.",
+    usage: "[reel URL]",
     cooldown: 3,
     permissions: [1, 2],
     credits: "Coffee",
 };
 
-async function onCall({ message, args, threadID }) {
-    const videoUrl = args.join(" ");
+async function onCall({ message, args }) {
+    const reelUrl = args.join(" ");
 
-    if (!videoUrl) return message.reply("Please provide a valid Facebook video URL.");
+    if (!reelUrl) return message.reply("Please provide the Facebook reel URL.");
 
     await message.react("🕰️"); // Indicate processing
 
-    const apiUrl = `https://deku-rest-api.gleeze.com/api/fbdl2?url=${encodeURIComponent(videoUrl)}`;
+    const apiUrl = `https://deku-rest-api.gleeze.com/api/fbdl2?url=${encodeURIComponent(reelUrl)}`;
 
     try {
-        const response = await fetch(apiUrl);
+        const response = await axios.get(apiUrl);
 
-        if (!response.ok) throw new Error("Failed to fetch data");
+        if (response.data.status !== 200) throw new Error("Failed to fetch data");
 
-        const { result = {} } = await response.json();
-        const { normal_video: normalVideo } = result;
+        const { normal_video } = response.data.result;
 
-        if (!normalVideo) throw new Error("No video found.");
+        if (normal_video) {
+            // Download the video as a stream
+            const videoResponse = await axios.get(normal_video, { responseType: 'stream' });
+            
+            // Define a temporary file path
+            const filePath = './plugins/commands/cache/fb_video.mp4';
 
-        await message.react("✔️"); // React with ✔️ on success
+            // Create a writable stream for the file
+            const writer = fs.createWriteStream(filePath);
 
-        // Send the video URL as a message in the same thread where the request was made
-        await message.client.sendMessage(threadID, normalVideo);
+            // Pipe the video stream to the file
+            videoResponse.data.pipe(writer);
+
+            // Wait for the stream to finish
+            await new Promise((resolve, reject) => {
+                writer.on('finish', resolve);
+                writer.on('error', reject);
+            });
+
+            // Send the video as an attachment
+            await message.reply({
+                files: [{
+                    attachment: filePath,
+                    name: 'facebook_video.mp4',
+                }]
+            });
+
+            // React with ✅ on success
+            await message.react("✅");
+
+            // Clean up the temporary file after sending
+            fs.unlinkSync(filePath);
+
+        } else {
+            await message.react("❎"); // React with ❎ if no video found
+            await message.reply("Sorry, I couldn't find the video.");
+        }
     } catch (error) {
         console.error(error);
-        await message.react("✖️"); // React with ✖️ on error
-        await message.reply("An error occurred while fetching the video."); // Error message
+        await message.react("❎"); // React with ❎ on error
+        await message.reply("An error occurred while fetching the data."); // Error message
     }
 }
 
