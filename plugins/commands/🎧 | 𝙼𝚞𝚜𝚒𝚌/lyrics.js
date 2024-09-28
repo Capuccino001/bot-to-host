@@ -18,21 +18,18 @@ const apiConfig = {
 };
 
 async function fetchLyrics(message, songName) {
-    const { name, url } = apiConfig;
-    const apiUrl = url(songName);
+    const apiUrl = apiConfig.url(songName);
 
     try {
-        const response = await axios.get(apiUrl);
-        const { lyrics, title, artist } = response.data;
+        const { data } = await axios.get(apiUrl);
+        const { lyrics, title, artist } = data;
 
-        if (!lyrics) {
-            throw new Error("Lyrics not found");
-        }
+        if (!lyrics) throw new Error("Lyrics not found");
 
         sendFormattedLyrics(message, title, artist, lyrics);
     } catch (error) {
-        console.error(`Error fetching lyrics from ${name} for "${songName}":`, error.message || error);
-        message.send(`Sorry, there was an error getting the lyrics for "${songName}"!`);
+        console.error(`Error fetching lyrics from ${apiConfig.name} for "${songName}":`, error.message);
+        message.send(`Sorry, there was an error getting the lyrics for "${songName}": ${error.message}`);
     }
 }
 
@@ -43,15 +40,12 @@ function sendFormattedLyrics(message, title, artist, lyrics) {
 
 async function onCall({ message, args }) {
     const songName = args.join(" ").trim();
-    if (!songName) {
-        message.send("Please provide a song name!");
-        return;
-    }
+    if (!songName) return message.send("Please provide a song name!");
 
     await fetchLyrics(message, songName);
 }
 
 export default {
     config,
-    onCall
+    onCall,
 };
