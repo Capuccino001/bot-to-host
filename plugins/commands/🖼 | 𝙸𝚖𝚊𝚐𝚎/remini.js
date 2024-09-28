@@ -9,7 +9,7 @@ const cachePath = path.join(__dirname, './plugins/commands/cache');
 const config = {
     name: 'remini',
     version: '1.0.0',
-    permissions: 0,
+    permissions: [0],
     credits: 'Cache',
     description: 'Enhance the image',
     commandCategory: 'Images',
