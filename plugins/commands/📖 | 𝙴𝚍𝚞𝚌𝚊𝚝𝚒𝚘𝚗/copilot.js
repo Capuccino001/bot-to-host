@@ -18,18 +18,20 @@ const previousResponses = new Map(); // Map to store previous responses for each
 async function onCall({ message, args }) {
     const userId = message.senderID; // User ID
 
-    // Check if there's a query
+    // Handle case where no query is provided
     if (!args.length) {
-        return message.reply("🌊✨ | 𝙲𝚘𝚙𝚒𝚕𝚘𝚝\n━━━━━━━━━━━━━━━━\nHello! How can I assist you today?\n━━━━━━━━━━━━━━━━");
+        return message.reply("🌊✨ | 𝙲𝚘𝚙𝚒𝚗𝚘𝚕𝚝\n━━━━━━━━━━━━━━━━\nHello! How can I assist you today?\n━━━━━━━━━━━━━━━━");
     }
 
-    let query = args.join(" ");
+    const userQuery = args.join(" ");
     const previousResponse = previousResponses.get(userId); // Get the previous response for the user
 
     // Handle follow-up queries
-    if (previousResponse) {
-        query = `Follow-up on: "${previousResponse}"\nUser reply: "${query}"`;
-    }
+    const query = previousResponse 
+        ? `Follow-up on: "${previousResponse}"\nUser reply: "${userQuery}"`
+        : userQuery;
+
+    await message.react("🕰️"); // Indicate processing
 
     try {
         const typingIndicator = global.api.sendTypingIndicator(message.threadID); // Start typing indicator
@@ -59,10 +61,12 @@ async function onCall({ message, args }) {
 
         // Store the response for follow-up
         previousResponses.set(userId, copilotResponse);
+        await message.react("✔️"); // React with ✔️ on success
     } catch (error) {
         // Log the error for debugging
         console.error("API call failed: ", error);
-        await message.send("❌ | An error occurred while trying to reach the Bing Copilot.");
+        await message.react("✖️"); // React with ✖️ on error
+        await message.send("❌ | An error occurred while trying to reach the Bing Copilot."); // Error message
     }
 }
 
