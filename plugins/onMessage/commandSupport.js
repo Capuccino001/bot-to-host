@@ -1,5 +1,5 @@
 const commandFiles = [
-    { category: "📖 | 𝙴𝚍𝚞𝚌𝚊𝚝𝚒𝚘𝚗", commands: ['ai', 'blackbox', 'copilot', 'gemini', 'gpt', 'translate'] },
+    { category: "📖 | 𝙴𝚍𝚞𝚌𝚊𝚝𝚒𝚘𝚗", commands: ['ai', 'blackbox', 'copilot', 'gpt', 'translate'] },
     { category: "🖼 | 𝙸𝚖𝚊𝚐𝚎", commands: ['imagine', 'pinterest', 'removebg', 'remini'] },
     { category: "🎧 | 𝙼𝚞𝚜𝚒𝚌", commands: ['lyrics', 'spotify', 'chords'] },
     { category: "👥 | 𝙼𝚎𝚖𝚋𝚎𝚛𝚜", commands: ['tempmail', 'tid', 'uid', 'unsend', 'help', 'alldl', 'font', 'adduser'] }
