@@ -14,7 +14,9 @@ const DEFAULT_COUNT = 12; // Always fetch 12 images
 async function onCall({ message, args }) {
     const userSearchTerm = args.join(" ");
 
-    if (!userSearchTerm) return message.reply("Please provide a search term.");
+    if (!userSearchTerm) {
+        return message.reply("Please provide a search term.");
+    }
 
     await message.react("🕰️"); // Indicate processing
 
@@ -22,6 +24,7 @@ async function onCall({ message, args }) {
         const response = await fetch(`${API_URL}?search=${encodeURIComponent(userSearchTerm)}&count=${DEFAULT_COUNT}`);
         const data = await response.json();
 
+        // Check if the response was successful and contains images
         if (!response.ok || !data.images?.length) {
             const errorMessage = data.error || "No images found for your search.";
             throw new Error(errorMessage);
@@ -30,17 +33,18 @@ async function onCall({ message, args }) {
         // Send initial message
         await message.reply(`Here are the images for "${userSearchTerm}":`);
 
-        // Send images as attachments in a separate message
+        // Create an array of attachments
         const attachments = data.images.map(img => ({
             attachment: img.url,
             name: `${userSearchTerm}_${img.url.split('/').pop()}`,
         }));
 
-        await message.channel.send({ files: attachments }); // Send files separately
+        // Send images as attachments
+        await message.channel.send({ files: attachments });
 
         await message.react("✅"); // Success reaction
     } catch (error) {
-        console.error(error);
+        console.error("Image search error:", error);
         await message.react("❎"); // Error reaction
         await message.reply(`An error occurred: ${error.message}`);
     }
