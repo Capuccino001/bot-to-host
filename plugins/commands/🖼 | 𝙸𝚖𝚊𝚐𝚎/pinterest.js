@@ -17,7 +17,12 @@ const config = {
     },
 };
 
-const cachePath = './plugins/commands/cache';
+const cachePath = path.join(__dirname, './plugins/commands/cache');
+
+// Ensure cache directory exists
+if (!fs.existsSync(cachePath)) {
+    fs.mkdirSync(cachePath, { recursive: true });
+}
 
 async function onCall({ message, args }) {
     if (args.length === 0) {
@@ -25,50 +30,15 @@ async function onCall({ message, args }) {
         return;
     }
 
-    let imageCount = 1;
-    const query = args.slice(0, -1).join(" ");
-
-    const countArg = args[args.length - 1];
-    if (countArg.startsWith('-')) {
-        imageCount = parseInt(countArg.slice(1), 10);
-        if (isNaN(imageCount) || imageCount < 1) {
-            imageCount = 1;
-        } else if (imageCount > 12) {
-            imageCount = 12;
-        }
-    }
-
-    const allImages = [];
-    let fetchedImagesCount = 0;
+    const { query, imageCount } = parseArgs(args);
 
     try {
-        while (fetchedImagesCount < imageCount) {
-            const remaining = imageCount - fetchedImagesCount;
-            const fetchLimit = Math.min(6, remaining);
+        const allImages = await fetchImages(query, imageCount);
 
-            const images1 = await samirapi.searchPinterest(query);
-            if (images1.result) {
-                allImages.push(...images1.result.slice(0, fetchLimit));
-                fetchedImagesCount += images1.result.length;
-            }
-
-            if (fetchedImagesCount < imageCount) {
-                const images2 = await samirapi.searchPinterest(`${query} 1`);
-                if (images2.result) {
-                    allImages.push(...images2.result.slice(0, fetchLimit));
-                    fetchedImagesCount += images2.result.length;
-                }
-            }
-
-            if (fetchedImagesCount >= imageCount) break;
-        }
-
-        const finalImages = allImages.slice(0, imageCount);
-
-        if (finalImages.length > 0) {
-            const filePaths = await downloadImages(finalImages);
+        if (allImages.length > 0) {
+            const filePaths = await downloadImages(allImages);
             await message.reply({
-                body: `Here are the top ${finalImages.length} images for "${query}".`,
+                body: `Here are the top ${filePaths.length} images for "${query}".`,
                 attachment: filePaths.map(filePath => fs.createReadStream(filePath))
             });
 
@@ -83,20 +53,62 @@ async function onCall({ message, args }) {
     }
 }
 
+function parseArgs(args) {
+    const countArg = args[args.length - 1];
+    let imageCount = 1;
+
+    if (countArg.startsWith('-')) {
+        imageCount = parseInt(countArg.slice(1), 10);
+        if (isNaN(imageCount) || imageCount < 1) {
+            imageCount = 1;
+        } else if (imageCount > 12) {
+            imageCount = 12;
+        }
+        args.pop(); // Remove the count argument
+    }
+
+    const query = args.join(" ");
+    return { query, imageCount };
+}
+
+async function fetchImages(query, requestedCount) {
+    const allImages = [];
+    let fetchedImagesCount = 0;
+
+    while (fetchedImagesCount < requestedCount) {
+        const remaining = requestedCount - fetchedImagesCount;
+        const fetchLimit = Math.min(6, remaining);
+
+        const images1 = await samirapi.searchPinterest(query);
+        if (images1.result) {
+            allImages.push(...images1.result.slice(0, fetchLimit));
+            fetchedImagesCount += images1.result.length;
+        }
+
+        if (fetchedImagesCount < requestedCount) {
+            const images2 = await samirapi.searchPinterest(`${query} 1`);
+            if (images2.result) {
+                allImages.push(...images2.result.slice(0, fetchLimit));
+                fetchedImagesCount += images2.result.length;
+            }
+        }
+
+        if (fetchedImagesCount >= requestedCount) break;
+    }
+
+    return allImages.slice(0, requestedCount);
+}
+
 async function downloadImages(imageUrls) {
     const filePaths = [];
 
     for (let i = 0; i < imageUrls.length; i++) {
         const url = imageUrls[i];
         const filePath = path.join(cachePath, `image${i}.jpg`);
+        
+        const response = await axios.get(url, { responseType: 'stream' });
         const writer = fs.createWriteStream(filePath);
-
-        const response = await axios({
-            url,
-            method: 'GET',
-            responseType: 'stream',
-        });
-
+        
         response.data.pipe(writer);
 
         await new Promise((resolve, reject) => {
