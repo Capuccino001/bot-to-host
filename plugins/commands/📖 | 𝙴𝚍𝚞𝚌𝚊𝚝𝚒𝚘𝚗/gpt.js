@@ -8,42 +8,43 @@ const config = {
     category: "𝙴𝚍𝚞𝚌𝚊𝚝𝚒𝚘𝚗",
     cooldown: 3,
     permissions: [0, 1, 2],
-    isAbsolute: false,
-    isHidden: false,
     credits: "RN",
 };
 
 async function onCall({ message, args }) {
+    // Handle case where no query is provided
     if (!args.length) {
-        message.reply("🗨️✨ | 𝙲𝚑𝚊𝚝𝙶𝙿𝚃\n━━━━━━━━━━━━━━━━\nHello! How can I assist you today?\n━━━━━━━━━━━━━━━━");
-        return;
+        return message.reply("🗨️✨ | 𝙲𝚑𝚊𝚝𝙶𝙿𝚃\n━━━━━━━━━━━━━━━━\nHello! How can I assist you today?\n━━━━━━━━━━━━━━━━");
     }
 
-    let query = args.join(" ");
+    const query = args.join(" ");
     const uid = message.senderID; // Using senderID as uid
 
+    // Indicate processing
+    const typingIndicator = global.api.sendTypingIndicator(message.threadID);
+
     try {
-        const typ = global.api.sendTypingIndicator(message.threadID);
+        // Send request to the API
+        const { data } = await axios.get(`https://deku-rest-api.gleeze.com/gpt4`, {
+            params: {
+                prompt: query,
+                uid: uid
+            }
+        });
 
-        // Send request to the new API with the query
-        const response = await axios.get(`https://deku-rest-api.gleeze.com/gpt4?prompt=${encodeURIComponent(query)}&uid=${uid}`);
+        typingIndicator(); // Stop the typing indicator
 
-        typ();
-
-        // Log the response to check its structure
-        console.log("API response: ", response.data);
-
-        // Extract the reply from the response
-        if (response.data && response.data.gpt4) {
-            const gptResponse = response.data.gpt4;
-            await message.send(`🗨️✨ | 𝙲𝚑𝚊𝚝𝙶𝙿𝚃\n━━━━━━━━━━━━━━━━\n${gptResponse}\n━━━━━━━━━━━━━━━━`);
+        // Validate the response
+        if (data?.gpt4) {
+            await message.send(`🗨️✨ | 𝙲𝚑𝚊𝚝𝙶𝙿𝚃\n━━━━━━━━━━━━━━━━\n${data.gpt4}\n━━━━━━━━━━━━━━━━`);
         } else {
             await message.send("🗨️✨ | 𝙲𝚊𝚝𝙶𝙿𝚃\n━━━━━━━━━━━━━━━━\nError: Unexpected response format from API.\n━━━━━━━━━━━━━━━━");
         }
     } catch (error) {
         // Log the error for debugging
         console.error("API call failed: ", error);
-        message.react(`❎`);
+        await message.react(`❎`);
+        await message.send("An error occurred while fetching the data."); // Inform the user about the error
     }
 }
 
