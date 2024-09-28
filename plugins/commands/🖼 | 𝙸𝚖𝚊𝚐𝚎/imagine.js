@@ -42,42 +42,50 @@ export async function onCall({ message, args }) {
 
     const prompt = args.join(" ");
     const maxRetries = 3;
-    let attempt = 0;
 
-    while (attempt < maxRetries) {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
             const translatedPrompt = await translateText(prompt);
-
             const response = await axios.post("https://imagine-ayoub.vercel.app/generate-image", { prompt: translatedPrompt });
             const images = response.data.images;
 
-            const cachedImages = [];
-            for (let i = 0; i < images.length; i++) {
-                const imageBuffer = Buffer.from(images[i], 'binary');
-                const filePath = path.join(__dirname, `./cache/cache_${i}.png`);
-
-                // Write image to cache directory
-                fs.writeFileSync(filePath, imageBuffer);
-                cachedImages.push(filePath);
+            if (!images || images.length === 0) {
+                throw new Error("No images returned from the generation service.");
             }
+
+            const cachedImages = await cacheImages(images);
 
             const attachments = cachedImages.map(filePath => fs.createReadStream(filePath));
 
-            message.send({
-                body: "Images generated successfully",
+            await message.send({
+                body: "Images generated successfully.",
                 attachment: attachments
             });
 
             return; 
         } catch (error) {
-            console.error(`Attempt ${attempt + 1} - Error response: `, error.response ? JSON.stringify(error.response.data) : error.message);
-            attempt++;
-            if (attempt >= maxRetries) {
-                const errorMessage = error.response && error.response.data && error.response.data.error ? error.response.data.error : error.message;
-                message.send(`An error occurred while processing the request - ${errorMessage}`);
+            console.error(`Attempt ${attempt + 1} - Error: `, error.response ? JSON.stringify(error.response.data) : error.message);
+            if (attempt === maxRetries - 1) {
+                const errorMessage = error.response?.data?.error || error.message;
+                return message.send(`An error occurred while processing the request - ${errorMessage}`);
             }
         }
     }
+}
+
+async function cacheImages(images) {
+    const cachedImages = [];
+
+    for (let i = 0; i < images.length; i++) {
+        const imageBuffer = Buffer.from(images[i], 'binary');
+        const filePath = path.join(__dirname, `./cache/cache_${i}.png`);
+
+        // Write image to cache directory
+        fs.writeFileSync(filePath, imageBuffer);
+        cachedImages.push(filePath);
+    }
+
+    return cachedImages;
 }
 
 export default {
