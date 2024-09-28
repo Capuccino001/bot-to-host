@@ -1,3 +1,7 @@
+import axios from 'axios';
+import fs from 'fs';
+import path from 'path';
+
 const config = {
     name: "gmage",
     aliases: ["gimage", "imgsearch"],
@@ -9,9 +13,7 @@ const config = {
 };
 
 const API_URL = "https://openapi-idk8.onrender.com/google/image";
-const REACTION_PROCESSING = "🕰️";
-const REACTION_SUCCESS = "✅";
-const REACTION_ERROR = "❎";
+const CACHE_PATH = './plugins/commands/cache';
 const DEFAULT_COUNT = 12; // Always fetch 12 images
 
 async function onCall({ message, args }) {
@@ -21,7 +23,7 @@ async function onCall({ message, args }) {
         return message.reply("Please provide a search term.");
     }
 
-    await message.react(REACTION_PROCESSING); // Indicate processing
+    await message.react("🕰️"); // Indicate processing
 
     const apiUrl = `${API_URL}?search=${encodeURIComponent(userSearchTerm)}&count=${DEFAULT_COUNT}`;
 
@@ -38,19 +40,52 @@ async function onCall({ message, args }) {
         if (images.length === 0) {
             await message.reply("No images found for your search.");
         } else {
-            const attachments = images.map(img => img.url); // Get URLs for the attachments
-            await message.reply({ 
-                content: `Here are some images for "${userSearchTerm}":`, // Updated message content
-                files: attachments // Send images as attachments
+            const filePaths = await downloadImages(images);
+            await message.reply({
+                body: `Here are some images for "${userSearchTerm}":`,
+                attachment: filePaths.map(filePath => fs.createReadStream(filePath))
             });
+
+            cleanupFiles(filePaths);
         }
 
-        await message.react(REACTION_SUCCESS); // React with ✅ on success
+        await message.react("✅"); // React with ✅ on success
     } catch (error) {
         console.error(error);
-        await message.react(REACTION_ERROR); // React with ❎ on error
+        await message.react("❎"); // React with ❎ on error
         await message.reply(`An error occurred: ${error.message || "Unable to fetch images."}`); // Provide error context
     }
+}
+
+async function downloadImages(imageUrls) {
+    const filePaths = [];
+
+    for (let i = 0; i < imageUrls.length; i++) {
+        const { url } = imageUrls[i];
+        const filePath = path.join(CACHE_PATH, `image${i}.jpg`);
+        const writer = fs.createWriteStream(filePath);
+
+        const response = await axios({
+            url,
+            method: 'GET',
+            responseType: 'stream',
+        });
+
+        response.data.pipe(writer);
+
+        await new Promise((resolve, reject) => {
+            writer.on('finish', resolve);
+            writer.on('error', reject);
+        });
+
+        filePaths.push(filePath);
+    }
+
+    return filePaths;
+}
+
+function cleanupFiles(filePaths) {
+    filePaths.forEach(filePath => fs.unlinkSync(filePath));
 }
 
 export default {
