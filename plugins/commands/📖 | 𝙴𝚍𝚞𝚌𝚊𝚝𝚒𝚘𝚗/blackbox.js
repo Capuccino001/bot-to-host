@@ -11,12 +11,12 @@ const config = {
 async function onCall({ message, args }) {
     const query = args.join(" ") || "hello"; // Use user input or default to "hello"
     const apiUrl = `https://openapi-idk8.onrender.com/blackbox?chat=${encodeURIComponent(query)}`;
-    
+
     try {
         const response = await fetch(apiUrl);
         const data = await response.json();
 
-        // Format the response using the specified header and footer
+        // Check if the response contains the expected data
         if (data && data.response) {
             const formattedResponse = `🗃 | 𝙱𝚕𝚊𝚌𝚔 𝙱𝚘𝚡 |\n━━━━━━━━━━━━━━━━\n${data.response}\n━━━━━━━━━━━━━━━━`;
             await message.send(formattedResponse);
