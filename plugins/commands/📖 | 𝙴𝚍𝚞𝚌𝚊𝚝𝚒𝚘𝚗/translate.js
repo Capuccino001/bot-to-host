@@ -69,20 +69,19 @@ async function onCall({ message, args, getLang, data }) {
 
     const langInput = args[0]?.toLowerCase();
     const threadLang = (data?.thread?.data?.language || global.config.LANGUAGE)?.slice(0, 2);
-    const targetLang = langInput || threadLang;
-    const lang_to = supportedLangs.includes(targetLang) ? targetLang : "en";
-    const text = type === "message_reply" ? message.messageReply.body : supportedLangs.includes(langInput) ? args.slice(1).join(" ") : args.join(" ");
+    const targetLang = supportedLangs.includes(langInput) ? langInput : threadLang || "en";
+    const text = type === "message_reply" ? message.messageReply.body : args.slice(langInput ? 1 : 0).join(" ");
 
     if (!text) return reply("Please enter the text you want to translate.");
 
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang_to}&dt=t&q=${encodeURIComponent(text)}`;
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
 
     try {
         const res = await GET(url);
         const translation = res.data[0].map(item => item[0]).join("");
         const lang_from = res.data[2];
         const fromName = langNames[lang_from] || lang_from;
-        const toName = langNames[lang_to] || lang_to;
+        const toName = langNames[targetLang] || targetLang;
 
         reply(`
 ━━━━━━━━━━━━━━━━
@@ -92,8 +91,8 @@ Translate text from\n${fromName} to ${toName}
 ▫️${translation}
 ━━━━━━━━━━━━━━━━`);
     } catch (err) {
-        console.error(err);
-        reply("An error occurred.");
+        console.error("Translation error:", err);
+        reply("An error occurred while translating the text. Please try again later.");
     }
 }
 
