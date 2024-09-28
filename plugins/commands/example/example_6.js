@@ -10,13 +10,13 @@ const config = {
 
 async function onCall({ message, args }) {
     const userQuery = args.join(" ");
-    
+
     if (!userQuery) return message.reply("Please provide a query.");
 
     await message.react("🕰️"); // Indicate processing
 
     const apiUrl = `https://example.com/api?query=${encodeURIComponent(userQuery)}`;
-    
+
     try {
         const response = await fetch(apiUrl);
 
