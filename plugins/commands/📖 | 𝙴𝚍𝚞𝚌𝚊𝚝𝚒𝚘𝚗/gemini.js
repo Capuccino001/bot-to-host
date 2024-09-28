@@ -2,63 +2,48 @@ import axios from 'axios';
 
 const config = {
     name: "gemini",
-    aliases: ["bard"],
-    description: "Ask a question to the Google Gemini.",
+    aliases: ["gemini"],
+    description: "Interact with the Gemini AI model.",
     usage: "[query]",
-    category: "𝙴𝚍𝚞𝚌𝚊𝚝𝚒𝚘𝚗",
-    cooldown: 3,
-    permissions: [0, 1, 2],
-    isAbsolute: false,
-    isHidden: false,
-    credits: "RN",
+    cooldown: 5,
+    permissions: [0],
+    credits: "Coffee",
 };
 
-const previousResponses = new Map(); // Map to store previous responses for each user
-
 async function onCall({ message, args }) {
-    if (!args.length) {
-        message.reply("👩‍💻✨ | 𝙶𝚎𝚖𝚒𝚗𝚒 \n━━━━━━━━━━━━━━━━\nHello! How can I assist you today?\n━━━━━━━━━━━━━━━━");
-        return;
-    }
+    const userQuery = args.join(" ");
 
-    let query = args.join(" ");
-    const id = message.senderID;
-    const previousResponse = previousResponses.get(id); // Get the previous response for the user
+    if (!userQuery) return message.reply("Please provide a query.");
 
-    // If there's a previous response, handle it as a follow-up
-    if (previousResponse) {
-        query = `Follow-up on: "${previousResponse}"\nUser reply: "${query}"`;
-    }
+    await message.react("🕰️"); // Indicate processing
+
+    const apiUrl = 'https://free-ai-models.vercel.app/v1/chat/completions';
+    const requestBody = {
+        model: 'gemini-1.5-pro-latest', // Modify the model if needed
+        messages: [
+            { role: 'system', content: '' }, // System message, can be left blank or customized
+            { role: 'user', content: userQuery } // User query from the message
+        ]
+    };
 
     try {
-        const typ = global.api.sendTypingIndicator(message.threadID);
+        const response = await axios.post(apiUrl, requestBody);
 
-        // Send request to the API with the query
-        const response = await axios.get(`https://deku-rest-api.gleeze.com/gemini?prompt=${encodeURIComponent(query)}`);
+        if (!response.data) throw new Error("No data returned from API");
 
-        typ();
+        const { choices } = response.data;
+        const result = choices?.[0]?.message?.content || "Sorry, I couldn't find a response.";
 
-        // Log the response to check its structure
-        console.log("API response: ", response.data);
-
-        // Extract the reply from the response
-        if (response.data && response.data.gemini) {
-            const geminiResponse = response.data.gemini;
-            await message.send(`👩‍💻✨ | 𝙶𝚎𝚖𝚒𝚗𝚒\n━━━━━━━━━━━━━━━━\n${geminiResponse}\n━━━━━━━━━━━━━━━━`);
-
-            // Store the response for follow-up
-            previousResponses.set(id, geminiResponse);
-        } else {
-            await message.send("👩‍💻✨ | 𝙶𝚎𝚖𝚒𝚗𝚒\n━━━━━━━━━━━━━━━━\nError: Unexpected response format from API.\n━━━━━━━━━━━━━━━━");
-        }
+        await message.reply(result); // Send back the AI's response
+        await message.react("✅"); // React with ✅ on success
     } catch (error) {
-        // Log the error for debugging
-        console.error("API call failed: ", error);
-        message.react(`❎`);
+        console.error('Error:', error.response ? error.response.data : error.message);
+        await message.react("❎"); // React with ❎ on error
+        await message.reply("An error occurred while interacting with the AI."); // Error message
     }
 }
 
 export default {
     config,
-    onCall
+    onCall,
 };
