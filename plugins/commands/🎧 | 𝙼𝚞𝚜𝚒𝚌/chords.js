@@ -4,8 +4,20 @@ const config = {
     description: "Search for chords by title or artist.",
     usage: "[query]",
     cooldown: 5,
-    permissions: [1, 2],
+    permissions: [0],
     credits: "Coffee",
+};
+
+const fetchChords = async (query) => {
+    const apiUrl = `https://deku-rest-api.gleeze.com/search/chords?q=${encodeURIComponent(query)}`;
+
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.chord || null;
 };
 
 async function onCall({ message, args }) {
@@ -14,14 +26,12 @@ async function onCall({ message, args }) {
     }
 
     const query = args.join(" ");
-    const apiUrl = `https://deku-rest-api.gleeze.com/search/chords?q=${encodeURIComponent(query)}`;
-
+    
     try {
-        const response = await fetch(apiUrl);
-        const data = await response.json();
-
-        if (data.chord) {
-            const { title, artist, chords } = data.chord;
+        const chordData = await fetchChords(query);
+        
+        if (chordData) {
+            const { title, artist, chords } = chordData;
             const replyMessage = `
 🎧 | Title: ${title}
 🎤 | Artist: ${artist}
@@ -34,7 +44,7 @@ ${chords}
             message.send("No chords found for your search query.");
         }
     } catch (error) {
-        console.error(error);
+        console.error("Chords fetch error:", error.message);
         message.send("An error occurred while fetching chords. Please try again later.");
     }
 }
