@@ -17,15 +17,15 @@ const config = {
 };
 
 async function onCall({ message, args }) {
-    if (args.length === 0) {
-        return await message.reply('📷 | Follow this format:\n-gmage naruto uzumaki');
-    }
-
-    const searchQuery = args.join(' ');
-    const apiKey = 'AIzaSyC_gYM4M6Fp1AOYra_K_-USs0SgrFI08V0';
-    const searchEngineID = 'e01c6428089ea4702';
-
     try {
+        if (args.length === 0) {
+            return await message.reply('📷 | Follow this format:\n-gmage naruto uzumaki');
+        }
+
+        const searchQuery = args.join(' ');
+        const apiKey = 'AIzaSyC_gYM4M6Fp1AOYra_K_-USs0SgrFI08V0';
+        const searchEngineID = 'e01c6428089ea4702';
+
         const response = await axios.get('https://www.googleapis.com/customsearch/v1', {
             params: {
                 key: apiKey,
@@ -35,62 +35,64 @@ async function onCall({ message, args }) {
             },
         });
 
-        const images = response.data.items?.slice(0, 12) || [];
-        if (images.length === 0) {
-            return await message.reply(`📷 | No images found for "${searchQuery}".`);
+        const images = response.data.items.slice(0, 12); // Limit to the first 12 images
+
+        const imgData = [];
+        let imagesDownloaded = 0;
+
+        for (const image of images) {
+            if (!image) {
+                // Skip null values
+                continue;
+            }
+
+            const imageUrl = image.link;
+
+            try {
+                const imageResponse = await axios.head(imageUrl); // Attempt to check if the image URL is valid
+
+                // Check if the response headers indicate a valid image
+                if (imageResponse.headers['content-type'].startsWith('image/')) {
+                    const response = await axios({
+                        method: 'get',
+                        url: imageUrl,
+                        responseType: 'stream',
+                    });
+
+                    const outputFileName = path.join('./plugins/commands/cache', `downloaded_image_${imgData.length + 1}.png`);
+                    const writer = fs.createWriteStream(outputFileName);
+
+                    response.data.pipe(writer);
+
+                    await new Promise((resolve, reject) => {
+                        writer.on('finish', resolve);
+                        writer.on('error', reject);
+                    });
+
+                    imgData.push(fs.createReadStream(outputFileName));
+                    imagesDownloaded++;
+                } else {
+                    console.error(`Invalid image (${imageUrl}): Content type is not recognized as an image.`);
+                }
+            } catch (error) {
+                console.error(`Error downloading image (${imageUrl}):`, error);
+                // Skip the current image if there's an error
+                continue;
+            }
         }
 
-        const imgData = await Promise.all(images.map(downloadImage));
-        const validImages = imgData.filter(img => img); // Filter out null images
-
-        if (validImages.length > 0) {
+        if (imagesDownloaded > 0) {
+            // Send only non-bad images as attachments
             await message.reply({
                 body: `Here are some images for "${searchQuery}":`,
-                attachment: validImages,
+                attachment: imgData,
             });
-
-            // Clean up downloaded images after sending
-            await Promise.all(validImages.map(img => fs.remove(img.path)));
         } else {
-            await message.reply('📷 | No valid images found, please try again later.');
+            await message.reply('📷 | I can\'t get your images at the moment, do try again later... (⁠｡⁠ŏ⁠﹏⁠ŏ⁠)');
         }
     } catch (error) {
-        console.error('Error during image search:', error);
-        await message.reply(`📷 | An error occurred: ${error.message || 'Unknown error'}`);
-    }
-}
-
-async function downloadImage(image) {
-    if (!image) return null;
-
-    const imageUrl = image.link;
-
-    try {
-        const imageResponse = await axios.head(imageUrl);
-        if (!imageResponse.headers['content-type'].startsWith('image/')) {
-            console.error(`Invalid image (${imageUrl}): Content type is not recognized as an image.`);
-            return null;
-        }
-
-        const response = await axios({
-            method: 'get',
-            url: imageUrl,
-            responseType: 'stream',
-        });
-
-        const outputFileName = path.join('./plugins/commands/cache', `downloaded_image_${Date.now()}.png`);
-        const writer = fs.createWriteStream(outputFileName);
-        response.data.pipe(writer);
-
-        await new Promise((resolve, reject) => {
-            writer.on('finish', resolve);
-            writer.on('error', reject);
-        });
-
-        return { path: outputFileName, stream: fs.createReadStream(outputFileName) };
-    } catch (error) {
-        console.error(`Error downloading image (${imageUrl}):`, error);
-        return null; // Return null on error to filter out later
+        console.error(error);
+        await message.reply('📷 | I can\'t get your images at the moment, do try again later... (⁠｡⁠ŏ⁠﹏⁠ŏ⁠)');
     }
 }
 
