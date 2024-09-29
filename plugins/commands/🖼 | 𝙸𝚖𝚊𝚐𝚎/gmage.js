@@ -1,44 +1,44 @@
-import samirapi from 'samirapi';
-
 const config = {
     name: "gmage",
-    aliases: ["googleimage", "gis"],
-    description: "Search Google for images.",
+    aliases: ["gimage", "imgsearch"],
+    description: "Searches Google for images based on a query.",
     usage: "[query]",
-    cooldown: 5,
+    cooldown: 3,
     permissions: [1, 2],
     credits: "Coffee",
 };
 
 async function onCall({ message, args }) {
-    const userId = message.senderID;
+    const userQuery = args.join(" ");
 
-    if (!args.length) {
-        return await message.reply("✖️ Please provide a query to search for images.");
-    }
+    if (!userQuery) return message.reply("Please provide a query to search for images.");
 
-    const query = args.join(" ");
+    await message.react("🕰️"); // Indicate processing
+
+    // Use the provided API to search for images, setting count to 12
+    const apiUrl = `https://openapi-idk8.onrender.com/google/image?search=${encodeURIComponent(userQuery)}&count=12`;
 
     try {
-        await message.react("🕰️");
-        const stopTypingIndicator = global.api.sendTypingIndicator(message.threadID);
-        const images = await samirapi.googleImageSearch(query);
+        const response = await fetch(apiUrl);
 
-        stopTypingIndicator();
+        if (!response.ok) throw new Error("Failed to fetch data");
 
-        console.log("Google Image Search Results: ", images);
+        const { images = [] } = await response.json();
 
-        if (images && images.length > 0) {
-            const imageMessage = images.slice(0, 12).join("\n"); // Limiting to 12 images max
-            await message.send(imageMessage);
-            await message.react("✔️");
-        } else {
-            await message.send("⚠️ No images found for the given query.");
+        if (images.length === 0) {
+            await message.reply("No images were found.");
+            await message.react("❎"); // React with ❎ if no images are found
+            return;
         }
+
+        // Send all images as one message
+        const imageUrls = images.join("\n");
+        await message.reply(`Here are the images for "${userQuery}":\n${imageUrls}`);
+        await message.react("✅"); // React with ✅ on success
     } catch (error) {
-        console.error("Image search failed: ", error);
-        await message.react("✖️");
-        await message.send("⚠️ Sorry, I couldn't fetch images. Please try again later.");
+        console.error(error);
+        await message.react("❎"); // React with ❎ on error
+        await message.reply("An error occurred while fetching the images."); // Error message
     }
 }
 
