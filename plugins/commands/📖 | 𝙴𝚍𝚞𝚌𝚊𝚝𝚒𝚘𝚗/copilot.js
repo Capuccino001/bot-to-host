@@ -1,65 +1,56 @@
-import axios from 'axios';
+import samirapi from 'samirapi';
 
 const config = {
     name: "copilot",
     aliases: ["bing"],
-    description: "Ask a question to the Bing Copilot",
+    description: "Query Bing Copilot AI for answers.",
     usage: "[query]",
-    category: "𝙴𝚍𝚞𝚌𝚊𝚝𝚒𝚘𝚗",
-    cooldown: 3,
-    permissions: [0, 1, 2],
-    isAbsolute: false,
-    isHidden: false,
-    credits: "RN",
+    cooldown: 5,
+    permissions: [0],
+    credits: "Coffee",
 };
 
-const previousResponses = new Map();
+// Define the header and footer
+const header = `🌊✨ | 𝙲𝚘𝚙𝚒𝚕𝚘𝚝\n━━━━━━━━━━━━━━━━`;
+const footer = `━━━━━━━━━━━━━━━━`;
 
 async function onCall({ message, args }) {
     const userId = message.senderID;
 
     if (!args.length) {
-        return await message.send(
-            `🌊✨ | 𝙲𝚘𝚙𝚒𝚕𝚘𝚝\n━━━━━━━━━━━━━━━━\nHello! How can I help you today? 😊\n━━━━━━━━━━━━━━━━`
-        );
+        // Reply with header, error message, and footer
+        return await message.reply(`${header}\n✖️ Please provide a query for Bing Copilot.\n${footer}`);
     }
 
-    const userQuery = args.join(" ");
-    const previousResponse = previousResponses.get(userId);
-
-    const query = previousResponse 
-        ? `Follow-up on: "${previousResponse}"\nUser reply: "${userQuery}"`
-        : userQuery;
-
-    await message.react("🕰️");
+    const query = args.join(" ");
 
     try {
-        const typingIndicator = global.api.sendTypingIndicator(message.threadID);
+        await message.react("🕰️");
+        const stopTypingIndicator = global.api.sendTypingIndicator(message.threadID);
 
-        const response = await axios.get(`https://samirxpikachuio.onrender.com/bing`, {
-            params: {
-                message: query,
-                mode: 1,
-                uid: userId
-            }
-        });
+        // Bing Copilot AI query
+        const response = await samirapi.bing({ message: query, mode: "creative", uid: userId });
 
-        typingIndicator();
+        stopTypingIndicator();
 
-        const copilotResponse = response.data;
+        console.log("Bing Copilot AI response: ", response);
 
-        await message.send(`🌊✨ | 𝙲𝚘𝚙𝚒𝚕𝚘𝚝\n━━━━━━━━━━━━━━━━\n${copilotResponse}\n━━━━━━━━━━━━━━━━`);
-
-        previousResponses.set(userId, copilotResponse);
-        await message.react("✔️");
+        if (response) {
+            // Send the response with the header and footer
+            await message.send(`${header}\n${response}\n${footer}`);
+            await message.react("✔️");
+        } else {
+            await message.send(`${header}\n⚠️ No response received from Bing Copilot AI.\n${footer}`);
+        }
     } catch (error) {
-        console.error("API call failed: ", error);
+        console.error("Bing Copilot AI query failed: ", error);
         await message.react("✖️");
-        await message.send("❌ | An error occurred while trying to reach the Bing Copilot.");
+        // Send the error message with the header and footer
+        await message.send(`${header}\n⚠️ Sorry, I couldn't process your query. Please try again later.\n${footer}`);
     }
 }
 
 export default {
     config,
-    onCall
+    onCall,
 };
