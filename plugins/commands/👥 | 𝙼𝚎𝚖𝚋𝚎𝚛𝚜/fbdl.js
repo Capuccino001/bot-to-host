@@ -35,20 +35,15 @@ async function onCall({ message, args }) {
             return await message.reply("Sorry, I couldn't find the video.");
         }
 
-        // Step 2: Stream the video and send it directly to the user
+        // Step 2: Download the video file as a buffer
         const videoResponse = await axios({
             url: contentUrl,
             method: 'GET',
-            responseType: 'stream',
+            responseType: 'arraybuffer', // Get the response as a buffer
         });
 
-        // Step 3: Send the streamed video as an attachment
-        await message.reply({
-            files: [{
-                attachment: videoResponse.data,
-                name: 'facebook_video.mp4',
-            }]
-        });
+        // Step 3: Send the video buffer as an attachment
+        await message.send({ attachment: Buffer.from(videoResponse.data) });
 
         // React with ✅ on success
         await message.react("✅");
