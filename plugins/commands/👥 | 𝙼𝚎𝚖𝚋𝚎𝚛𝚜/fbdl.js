@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { PassThrough } from 'stream';
 
 const config = {
     name: "fbdl",
@@ -35,15 +36,19 @@ async function onCall({ message, args }) {
             return await message.reply("Sorry, I couldn't find the video.");
         }
 
-        // Step 2: Download the video file as a buffer
+        // Step 2: Stream the video file directly
         const videoResponse = await axios({
             url: contentUrl,
             method: 'GET',
-            responseType: 'arraybuffer', // Get the response as a buffer
+            responseType: 'stream', // Stream the video response
         });
 
-        // Step 3: Send the video buffer as an attachment
-        await message.send({ attachment: Buffer.from(videoResponse.data) });
+        // Create a PassThrough stream to send as an attachment
+        const stream = new PassThrough();
+        videoResponse.data.pipe(stream);
+
+        // Step 3: Send the video stream as an attachment
+        await message.send({ attachment: stream });
 
         // React with ✅ on success
         await message.react("✅");
