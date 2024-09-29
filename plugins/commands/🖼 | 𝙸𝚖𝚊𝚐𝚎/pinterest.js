@@ -26,7 +26,7 @@ async function onCall({ message, args }) {
     }
 
     let imageCount = 1;
-    const query = args.slice(0, -1).join(" ");
+    const query = args.slice(0, -1).join(" ").trim();
 
     const countArg = args[args.length - 1];
     if (countArg.startsWith('-')) {
@@ -36,6 +36,12 @@ async function onCall({ message, args }) {
         } else if (imageCount > 12) {
             imageCount = 12;
         }
+    }
+
+    // Block the request if the query is empty or invalid
+    if (!query || query.length < 2) {
+        await message.reply("📷 | Please provide a valid search query. Example: -pinterest cat -5");
+        return;
     }
 
     const allImages = [];
