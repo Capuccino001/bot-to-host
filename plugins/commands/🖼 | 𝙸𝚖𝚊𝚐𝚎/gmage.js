@@ -1,78 +1,44 @@
-import axios from 'axios';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import samirapi from 'samirapi';
 
 const config = {
     name: "gmage",
-    aliases: ["gimage", "imgsearch"],
-    description: "Search for images on Google.",
-    usage: "[search term]",
-    cooldown: 3,
+    aliases: ["googleimage", "gis"],
+    description: "Search Google for images.",
+    usage: "[query]",
+    cooldown: 5,
     permissions: [1, 2],
     credits: "Coffee",
 };
 
-const API_URL = "https://openapi-idk8.onrender.com/google/image";
-const DEFAULT_COUNT = 12; // Always fetch 12 images
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Ensure cache directory exists
-const cacheDir = path.join(__dirname, './cache');
-if (!fs.existsSync(cacheDir)) {
-    fs.mkdirSync(cacheDir, { recursive: true });
-}
-
-async function cacheImages(images, userSearchTerm) {
-    const cachedImages = [];
-
-    for (let i = 0; i < images.length; i++) {
-        const imageUrl = images[i].url; // Assuming images contain a `url` property
-        const imageBuffer = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-
-        const filePath = path.join(cacheDir, `${userSearchTerm}_${i}.png`);
-        fs.writeFileSync(filePath, imageBuffer.data);
-        cachedImages.push(filePath);
-    }
-
-    return cachedImages;
-}
-
 async function onCall({ message, args }) {
-    const userSearchTerm = args.join(" ");
+    const userId = message.senderID;
 
-    if (!userSearchTerm) {
-        return message.reply("Please provide a search term.");
+    if (!args.length) {
+        return await message.reply("✖️ Please provide a query to search for images.");
     }
 
-    await message.react("🕰️"); // Indicate processing
+    const query = args.join(" ");
 
     try {
-        const response = await axios.get(`${API_URL}?search=${encodeURIComponent(userSearchTerm)}&count=${DEFAULT_COUNT}`);
-        const data = response.data;
+        await message.react("🕰️");
+        const stopTypingIndicator = global.api.sendTypingIndicator(message.threadID);
+        const images = await samirapi.googleImageSearch(query);
 
-        // Check if the response was successful and contains images
-        if (!data.images || !data.images.length) {
-            const errorMessage = data.error || "No images found for your search.";
-            throw new Error(errorMessage);
+        stopTypingIndicator();
+
+        console.log("Google Image Search Results: ", images);
+
+        if (images && images.length > 0) {
+            const imageMessage = images.slice(0, 12).join("\n"); // Limiting to 12 images max
+            await message.send(imageMessage);
+            await message.react("✔️");
+        } else {
+            await message.send("⚠️ No images found for the given query.");
         }
-
-        // Send initial message
-        await message.reply(`Here are the images for "${userSearchTerm}":`);
-
-        // Create an array of attachments
-        const attachments = await cacheImages(data.images, userSearchTerm);
-
-        // Send images as attachments
-        await message.channel.send({ files: attachments });
-
-        await message.react("✅"); // Success reaction
     } catch (error) {
-        console.error("Image search error:", error);
-        await message.react("❎"); // Error reaction
-        await message.reply(`An error occurred: ${error.message}`);
+        console.error("Image search failed: ", error);
+        await message.react("✖️");
+        await message.send("⚠️ Sorry, I couldn't fetch images. Please try again later.");
     }
 }
 
