@@ -11,6 +11,8 @@ const config = {
     cooldown: 5,
     permissions: [0, 1, 2],
     credits: "coffee",
+    extra: {
+        searchType: "images",
     },
 };
 
