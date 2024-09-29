@@ -14,7 +14,7 @@ async function onCall({ message, args }) {
     const userId = message.senderID;
 
     if (!args.length) {
-        return await message.reply("❌ Please provide a query to execute the command.");
+        return await message.reply("✖️ Please provide a query to execute the command.");
     }
 
     const query = args.join(" ");
@@ -30,13 +30,13 @@ async function onCall({ message, args }) {
 
         if (response) {
             await message.send(response);
-            await message.react("✅");
+            await message.react("✔️");
         } else {
             await message.send("⚠️ No response received from the API.");
         }
     } catch (error) {
         console.error("API call failed: ", error);
-        await message.react("❎");
+        await message.react("✔️");
         await message.send("⚠️ Sorry, I couldn't execute the command. Please try again later.");
     }
 }
