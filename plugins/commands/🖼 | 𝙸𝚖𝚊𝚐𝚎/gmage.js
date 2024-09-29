@@ -2,109 +2,113 @@ import axios from "axios";
 import fs from "fs";
 import path from "path";
 
-// Configuration object for the command
 const config = {
-  name: "gmage",
-  aliases: ["gimg", "imgsearch"],
-  description: "Searches for images based on a query.",
-  usage: "[query] -[number of images]",
-  cooldown: 3,
-  permissions: [1, 2],
-  credits: "Coffee",
-  extra: {
-    defaultCount: 12, // Default number of images to fetch
-    cacheDir: "./plugins/commands/cache", // Directory for caching images
-  },
+    name: "gmage",
+    aliases: ["gimg"],
+    description: "Search for images on Google and return them as attachments.",
+    usage: "[search term]",
+    cooldown: 3,
+    permissions: [1, 2],
+    credits: "Coffee",
 };
 
-// Main function executed when the command is called
+const API_URL = "https://openapi-idk8.onrender.com/google/image";
+const CACHE_DIR = "./plugins/commands/cache"; // Directory to store images temporarily
+const DEFAULT_COUNT = 12; // Always fetch 12 images
+
 async function onCall({ message, args }) {
-  const query = args.slice(0, -1).join(" ");
-  let imageCount = config.extra.defaultCount;
+    const userSearchTerm = args.join(" ");
 
-  // Check if the last argument is a number for the image count
-  const lastArg = args[args.length - 1];
-  if (lastArg && !isNaN(lastArg)) {
-    imageCount = Math.min(parseInt(lastArg), 12); // Set image count (max 12)
-  }
-
-  // Error handling for empty query
-  if (!query) return message.reply("Please provide a query.");
-
-  await message.react("🕰️"); // Indicate that processing is happening
-
-  try {
-    // Fetch image URLs from the API
-    const apiUrl = `https://openapi-idk8.onrender.com/google/image?search=${encodeURIComponent(
-      query
-    )}&count=${imageCount}`;
-    const { data } = await axios.get(apiUrl);
-    const allImages = data.images || [];
-
-    if (allImages.length === 0) {
-      return message.reply("No images were found for your query.");
+    if (!userSearchTerm) {
+        return message.reply("Please provide a search term.");
     }
 
-    // Download images and get their file paths
-    const filePaths = await downloadImages(allImages);
+    await message.react("🕰️"); // Indicate processing
 
-    // Reply to the message with the downloaded images
-    await message.reply({
-      content: `Here are ${allImages.length} images for your search: ${query}`,
-      attachments: filePaths.map((filePath) => fs.createReadStream(filePath)),
-    });
+    const apiUrl = `${API_URL}?search=${encodeURIComponent(userSearchTerm)}&count=${DEFAULT_COUNT}`;
 
-    await message.react("✅"); // Success reaction
+    try {
+        // Fetch images from API
+        const response = await fetch(apiUrl);
 
-    // Cleanup downloaded images after sending
-    cleanupFiles(filePaths);
-  } catch (error) {
-    console.error(error);
-    await message.react("❎"); // Error reaction
-    await message.reply("An error occurred while fetching the images.");
-  }
+        if (!response.ok) {
+            const errorResponse = await response.json();
+            throw new Error(errorResponse.error || "Failed to fetch data");
+        }
+
+        const { images = [] } = await response.json();
+
+        if (images.length === 0) {
+            await message.reply("No images found for your search.");
+        } else {
+            // Download images
+            const imageUrls = images.map(img => img.url);
+            const downloadedImages = await downloadImages(imageUrls);
+
+            // Reply with downloaded images as attachments
+            await message.reply({
+                content: `Here are ${downloadedImages.length} images for your search: "${userSearchTerm}"`,
+                attachments: downloadedImages.map(filePath => fs.createReadStream(filePath)),
+            });
+
+            // Cleanup downloaded images
+            await cleanupFiles(downloadedImages);
+        }
+
+        await message.react("✅"); // React with ✅ on success
+    } catch (error) {
+        console.error(error);
+        await message.react("❎"); // React with ❎ on error
+        await message.reply(`An error occurred: ${error.message || "Unable to fetch images."}`); // Provide error context
+    }
 }
 
-// Function to download images from URLs and save them locally
+// Function to download images from URLs
 async function downloadImages(imageUrls) {
-  const filePaths = [];
-  const downloadPromises = imageUrls.map(async (imageUrl, index) => {
-    const imagePath = path.join(config.extra.cacheDir, `image${index}.jpg`);
+    const filePaths = [];
 
-    // Download the image and save it locally
-    const response = await axios({
-      method: "GET",
-      url: imageUrl,
-      responseType: "stream",
-    });
+    for (let i = 0; i < imageUrls.length; i++) {
+        const imageUrl = imageUrls[i];
+        const filePath = path.join(CACHE_DIR, `image${i}.jpg`);
 
-    // Write the image stream to a file
-    const writer = fs.createWriteStream(imagePath);
-    response.data.pipe(writer);
+        try {
+            const response = await axios({
+                method: "GET",
+                url: imageUrl,
+                responseType: "stream",
+            });
 
-    // Ensure the image is fully downloaded before proceeding
-    await new Promise((resolve, reject) => {
-      writer.on("finish", resolve);
-      writer.on("error", reject);
-    });
+            // Write image to file
+            const writer = fs.createWriteStream(filePath);
+            response.data.pipe(writer);
 
-    filePaths.push(imagePath); // Add to filePaths array
-  });
+            // Wait for the file to finish writing
+            await new Promise((resolve, reject) => {
+                writer.on("finish", resolve);
+                writer.on("error", reject);
+            });
 
-  await Promise.all(downloadPromises); // Wait for all images to be downloaded
-  return filePaths; // Return the array of file paths
+            filePaths.push(filePath);
+        } catch (error) {
+            console.error(`Failed to download image: ${imageUrl}`, error);
+        }
+    }
+
+    return filePaths;
 }
 
 // Function to clean up downloaded images
-function cleanupFiles(filePaths) {
-  filePaths.forEach((filePath) => {
-    fs.unlink(filePath, (err) => {
-      if (err) console.error(`Error deleting file ${filePath}:`, err);
-    });
-  });
+async function cleanupFiles(filePaths) {
+    for (const filePath of filePaths) {
+        fs.unlink(filePath, (err) => {
+            if (err) {
+                console.error(`Failed to delete file: ${filePath}`, err);
+            }
+        });
+    }
 }
 
 export default {
-  config,
-  onCall,
+    config,
+    onCall,
 };
