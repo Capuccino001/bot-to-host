@@ -16,85 +16,87 @@ const config = {
     },
 };
 
-async function onCall({ message, args }) {
+const API_KEY = 'AIzaSyC_gYM4M6Fp1AOYra_K_-USs0SgrFI08V0';
+const SEARCH_ENGINE_ID = 'e01c6428089ea4702';
+const CACHE_DIR = './plugins/commands/cache';
+
+const downloadImage = async (imageUrl) => {
     try {
-        if (args.length === 0) {
-            return await message.reply('📷 | Follow this format:\n-gmage naruto uzumaki');
+        const { headers } = await axios.head(imageUrl);
+        if (!headers['content-type'].startsWith('image/')) {
+            throw new Error(`Invalid image type: ${imageUrl}`);
         }
 
-        const searchQuery = args.join(' ');
-        const apiKey = 'AIzaSyC_gYM4M6Fp1AOYra_K_-USs0SgrFI08V0';
-        const searchEngineID = 'e01c6428089ea4702';
+        const response = await axios.get(imageUrl, { responseType: 'stream' });
+        const outputFileName = path.join(CACHE_DIR, `downloaded_image_${Date.now()}.png`);
+        const writer = fs.createWriteStream(outputFileName);
 
-        const response = await axios.get('https://www.googleapis.com/customsearch/v1', {
-            params: {
-                key: apiKey,
-                cx: searchEngineID,
-                q: searchQuery,
-                searchType: 'image',
-            },
+        await new Promise((resolve, reject) => {
+            response.data.pipe(writer);
+            writer.on('finish', resolve);
+            writer.on('error', reject);
         });
 
-        const images = response.data.items.slice(0, 12); // Limit to the first 12 images
-
-        const imgData = [];
-        let imagesDownloaded = 0;
-
-        for (const image of images) {
-            if (!image) {
-                // Skip null values
-                continue;
-            }
-
-            const imageUrl = image.link;
-
-            try {
-                const imageResponse = await axios.head(imageUrl); // Attempt to check if the image URL is valid
-
-                // Check if the response headers indicate a valid image
-                if (imageResponse.headers['content-type'].startsWith('image/')) {
-                    const response = await axios({
-                        method: 'get',
-                        url: imageUrl,
-                        responseType: 'stream',
-                    });
-
-                    const outputFileName = path.join('./plugins/commands/cache', `downloaded_image_${imgData.length + 1}.png`);
-                    const writer = fs.createWriteStream(outputFileName);
-
-                    response.data.pipe(writer);
-
-                    await new Promise((resolve, reject) => {
-                        writer.on('finish', resolve);
-                        writer.on('error', reject);
-                    });
-
-                    imgData.push(fs.createReadStream(outputFileName));
-                    imagesDownloaded++;
-                } else {
-                    console.error(`Invalid image (${imageUrl}): Content type is not recognized as an image.`);
-                }
-            } catch (error) {
-                console.error(`Error downloading image (${imageUrl}):`, error);
-                // Skip the current image if there's an error
-                continue;
-            }
-        }
-
-        if (imagesDownloaded > 0) {
-            // Send only non-bad images as attachments
-            await message.reply({
-                body: `Here are some images for "${searchQuery}":`,
-                attachment: imgData,
-            });
-        } else {
-            await message.reply('📷 | I can\'t get your images at the moment, do try again later... (⁠｡⁠ŏ⁠﹏⁠ŏ⁠)');
-        }
+        return outputFileName; // Return the file path of the downloaded image
     } catch (error) {
-        console.error(error);
-        await message.reply('📷 | I can\'t get your images at the moment, do try again later... (⁠｡⁠ŏ⁠﹏⁠ŏ⁠)');
+        console.error(`Error downloading image (${imageUrl}): ${error.message}`);
+        return null; // Return null for invalid images
     }
-}
+};
+
+const cleanupImages = async (imagePaths) => {
+    await Promise.all(
+        imagePaths.map(imagePath => fs.remove(imagePath).catch(err => {
+            console.error(`Error cleaning up image (${imagePath}): ${err.message}`);
+        }))
+    );
+};
+
+const fetchImages = async (searchQuery) => {
+    const response = await axios.get('https://www.googleapis.com/customsearch/v1', {
+        params: {
+            key: API_KEY,
+            cx: SEARCH_ENGINE_ID,
+            q: searchQuery,
+            searchType: 'image',
+        },
+    });
+    return response.data.items?.slice(0, 12) || []; // Default to empty array if no items
+};
+
+const onCall = async ({ api, event, args }) => {
+    if (args.length === 0) {
+        return await api.sendMessage('📷 | Please provide a search query. Usage: -gmage [query]', event.threadID, event.messageID);
+    }
+
+    const searchQuery = args.join(' ');
+
+    try {
+        const images = await fetchImages(searchQuery);
+        if (images.length === 0) {
+            return await api.sendMessage(`📷 | No images found for "${searchQuery}".`, event.threadID, event.messageID);
+        }
+
+        const imgPromises = images.map(image => downloadImage(image.link));
+        const validImages = await Promise.all(imgPromises);
+
+        const nonNullImages = validImages.filter(Boolean);
+        if (nonNullImages.length === 0) {
+            return await api.sendMessage('📷 | No valid images could be downloaded. Please try again later.', event.threadID, event.messageID);
+        }
+
+        await api.sendMessage({
+            body: `Here are some images for "${searchQuery}":`,
+            attachment: nonNullImages.map(filePath => fs.createReadStream(filePath)),
+        }, event.threadID, event.messageID);
+
+        // Cleanup the downloaded images
+        await cleanupImages(nonNullImages);
+    } catch (error) {
+        console.error(`API call failed: ${error.message}`);
+        await api.sendMessage('📷 | An error occurred while fetching images. Please try again later.', event.threadID, event.messageID);
+    }
+};
 
 export default {
     config,
