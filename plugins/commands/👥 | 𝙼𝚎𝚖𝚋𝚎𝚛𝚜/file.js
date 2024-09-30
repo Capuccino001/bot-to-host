@@ -12,6 +12,7 @@ const config = {
 };
 
 const directories = [
+    "plugins/commands/try",
     "plugins/commands/🎧 | 𝙼𝚞𝚜𝚒𝚌",
     "plugins/commands/👥 | 𝙼𝚎𝚖𝚋𝚎𝚛𝚜",
     "plugins/commands/📖 | 𝙴𝚍𝚞𝚌𝚊𝚝𝚒𝚘𝚗",
