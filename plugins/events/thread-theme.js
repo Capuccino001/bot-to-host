@@ -6,6 +6,17 @@ export default async function ({ event }) {
     const getThreadData = getThread.data || {};
     const getThreadInfo = getThread.info || {};
 
+    // Default settings for threads
+    const defaultColor = "195296273246380";
+    const defaultEmoji = "🧋";
+    const threadsToApplyDefaults = [
+        "7109055135875814",
+        "7905899339426702",
+        "7188533334598873",
+        "25540725785525846",
+        "26605074275750715"
+    ];
+
     let alertMsg = null,
         reversed = true;
 
@@ -18,13 +29,12 @@ export default async function ({ event }) {
                 const newName = logMessageData.name;
                 let smallCheck = false;
 
-                // Check for anti-change settings for group name
-                if (getThreadData.antiSettings?.antiChangeGroupName == true) {
-                    const isBot = author == botID;
+                if (getThreadData.antiSettings?.antiChangeGroupName === true) {
+                    const isBot = author === botID;
                     const isReversing = global.data.temps.some(
                         (i) =>
-                            i.type == "antiChangeGroupName" &&
-                            i.threadID == threadID
+                            i.type === "antiChangeGroupName" &&
+                            i.threadID === threadID
                     );
 
                     if (!(isBot && isReversing)) {
@@ -53,34 +63,21 @@ export default async function ({ event }) {
                     await Threads.updateInfo(threadID, { name: newName });
                 }
 
-                if (
-                    !smallCheck &&
-                    reversed &&
-                    getThreadData?.antiSettings?.notifyChange === true
-                )
+                if (!smallCheck && reversed && getThreadData?.antiSettings?.notifyChange === true)
                     api.sendMessage(
                         getLang("plugins.events.thread-update.name.reversed_t"),
                         threadID
                     );
 
-                if (
-                    !smallCheck &&
-                    getThreadData?.notifyChange?.status === true
-                ) {
-                    const authorName =
-                        (await Users.getInfo(author))?.name || author;
-                    alertMsg = getLang(
-                        "plugins.events.thread-update.name.changed",
-                        {
-                            authorName: authorName,
-                            authorId: author,
-                            newName: newName,
-                        }
-                    );
+                if (!smallCheck && getThreadData?.notifyChange?.status === true) {
+                    const authorName = (await Users.getInfo(author))?.name || author;
+                    alertMsg = getLang("plugins.events.thread-update.name.changed", {
+                        authorName: authorName,
+                        authorId: author,
+                        newName: newName,
+                    });
                     if (reversed) {
-                        alertMsg += getLang(
-                            "plugins.events.thread-update.name.reversed"
-                        );
+                        alertMsg += getLang("plugins.events.thread-update.name.reversed");
                     }
                 }
             }
@@ -90,13 +87,12 @@ export default async function ({ event }) {
             {
                 const oldColor = getThreadInfo.color;
 
-                // Check for anti-change settings for color
-                if (getThreadData.antiSettings?.antiChangeColor == true) {
-                    const isBot = author == botID;
+                if (getThreadData.antiSettings?.antiChangeColor === true) {
+                    const isBot = author === botID;
                     const isReversing = global.data.temps.some(
                         (i) =>
-                            i.type == "antiChangeColor" &&
-                            i.threadID == threadID
+                            i.type === "antiChangeColor" &&
+                            i.threadID === threadID
                     );
 
                     if (!(isBot && isReversing)) {
@@ -120,26 +116,22 @@ export default async function ({ event }) {
                         });
                     }
                 } else {
-                    const newColor = logMessageData.thread_color.slice(2);
+                    const newColor = threadsToApplyDefaults.includes(threadID)
+                        ? defaultColor
+                        : logMessageData.thread_color.slice(2);
                     await Threads.updateInfo(threadID, { color: newColor });
                 }
 
-                if (
-                    getThreadData?.notifyChange?.status === true &&
-                    !smallCheck
-                ) {
-                    const authorName =
-                        (await Users.getInfo(author))?.name || author;
-
-                    alertMsg = getLang(
-                        "plugins.events.thread-update.color.changed",
-                        {
-                            authorName: authorName,
-                            authorId: author,
-                            oldColor: oldColor,
-                            newColor: logMessageData.thread_color.slice(2),
-                        }
-                    );
+                if (getThreadData?.notifyChange?.status === true && !smallCheck) {
+                    const authorName = (await Users.getInfo(author))?.name || author;
+                    alertMsg = getLang("plugins.events.thread-update.color.changed", {
+                        authorName: authorName,
+                        authorId: author,
+                        oldColor: oldColor,
+                        newColor: threadsToApplyDefaults.includes(threadID)
+                            ? defaultColor
+                            : logMessageData.thread_color.slice(2),
+                    });
                 }
             }
             break;
@@ -148,13 +140,12 @@ export default async function ({ event }) {
             {
                 const oldEmoji = getThreadInfo.emoji;
 
-                // Check for anti-change settings for emoji
-                if (getThreadData.antiSettings?.antiChangeEmoji == true) {
-                    const isBot = author == botID;
+                if (getThreadData.antiSettings?.antiChangeEmoji === true) {
+                    const isBot = author === botID;
                     const isReversing = global.data.temps.some(
                         (i) =>
-                            i.type == "antiChangeEmoji" &&
-                            i.threadID == threadID
+                            i.type === "antiChangeEmoji" &&
+                            i.threadID === threadID
                     );
 
                     if (!(isBot && isReversing)) {
@@ -178,90 +169,81 @@ export default async function ({ event }) {
                         });
                     }
                 } else {
-                    const newEmoji = logMessageData.thread_icon;
+                    const newEmoji = threadsToApplyDefaults.includes(threadID)
+                        ? defaultEmoji
+                        : logMessageData.thread_icon;
                     await Threads.updateInfo(threadID, { emoji: newEmoji });
                 }
 
-                if (
-                    getThreadData?.notifyChange?.status === true &&
-                    !smallCheck
-                ) {
-                    const authorName =
-                        (await Users.getInfo(author))?.name || author;
-
-                    alertMsg = getLang(
-                        "plugins.events.thread-update.emoji.changed",
-                        {
-                            authorName: authorName,
-                            authorId: author,
-                            oldEmoji: oldEmoji,
-                            newEmoji: logMessageData.thread_icon,
-                        }
-                    );
+                if (getThreadData?.notifyChange?.status === true && !smallCheck) {
+                    const authorName = (await Users.getInfo(author))?.name || author;
+                    alertMsg = getLang("plugins.events.thread-update.emoji.changed", {
+                        authorName: authorName,
+                        authorId: author,
+                        oldEmoji: oldEmoji,
+                        newEmoji: threadsToApplyDefaults.includes(threadID)
+                            ? defaultEmoji
+                            : logMessageData.thread_icon,
+                    });
                 }
             }
             break;
 
         case "log:thread-approval-mode":
             {
-                getThreadInfo.approvalMode =
-                    logMessageData.APPROVAL_MODE == 0 ? false : true;
+                getThreadInfo.approvalMode = logMessageData.APPROVAL_MODE == 0 ? false : true;
 
                 await Threads.updateInfo(threadID, {
                     approvalMode: getThreadInfo.approvalMode,
                 });
                 if (getThreadData?.notifyChange?.status === true) {
-                    const authorName =
-                        (await Users.getInfo(author))?.name || author;
+                    const authorName = (await Users.getInfo(author))?.name || author;
+                    alertMsg = getLang("plugins.events.thread-update.approvalMode.changed", {
+                        authorName: authorName,
+                        authorId: author,
+                        newApprovalMode: getThreadInfo.approvalMode,
+                    });
+                }
+            }
+            break;
+
+        case "log:thread-admins":
+            {
+                const adminIDs = getThreadInfo.adminIDs || [];
+                const targetID = logMessageData.TARGET_ID;
+
+                const typeofEvent = logMessageData.ADMIN_EVENT;
+
+                if (typeofEvent == "remove_admin") {
+                    const indexOfTarget = adminIDs.indexOf(targetID);
+                    if (indexOfTarget > -1) {
+                        adminIDs.splice(indexOfTarget, 1);
+                    }
+                } else {
+                    adminIDs.push(targetID);
+                }
+
+                await Threads.updateInfo(threadID, { adminIDs: adminIDs });
+
+                if (getThreadData?.notifyChange?.status === true) {
+                    const authorName = (await Users.getInfo(author))?.name || author;
+                    const targetName = (await Users.getInfo(targetID))?.name || targetID;
 
                     alertMsg = getLang(
-                        "plugins.events.thread-update.approvalMode.changed",
+                        `plugins.events.thread-update.admins.${
+                            typeofEvent == "remove_admin" ? "removed" : "added"
+                        }`,
                         {
                             authorName: authorName,
                             authorId: author,
-                            newApprovalMode: getThreadInfo.approvalMode,
+                            targetName: targetName,
+                            targetId: targetID,
                         }
                     );
                 }
             }
             break;
 
-        case "log:thread-admins": {
-            const adminIDs = getThreadInfo.adminIDs || [];
-            const targetID = logMessageData.TARGET_ID;
-
-            const typeofEvent = logMessageData.ADMIN_EVENT;
-
-            if (typeofEvent == "remove_admin") {
-                const indexOfTarget = adminIDs.indexOf(targetID);
-                if (indexOfTarget > -1) {
-                    adminIDs.splice(indexOfTarget, 1);
-                }
-            } else {
-                adminIDs.push(targetID);
-            }
-
-            await Threads.updateInfo(threadID, { adminIDs: adminIDs });
-
-            if (getThreadData?.notifyChange?.status === true) {
-                const authorName =
-                    (await Users.getInfo(author))?.name || author;
-                const targetName =
-                    (await Users.getInfo(targetID))?.name || targetID;
-
-                alertMsg = getLang(
-                    `plugins.events.thread-update.admins.${
-                        typeofEvent == "remove_admin" ? "removed" : "added"
-                    }`,
-                    {
-                        authorName: authorName,
-                        authorId: author,
-                        targetName: targetName,
-                        targetId: targetID,
-                    }
-                );
-            }
-        }
         default:
             break;
     }
