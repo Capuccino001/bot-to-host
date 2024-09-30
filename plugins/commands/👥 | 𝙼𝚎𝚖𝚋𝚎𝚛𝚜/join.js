@@ -21,6 +21,11 @@ async function handleCommand(event, xDatabase) {
 
 async function onCall({ api, message, event, xDatabase }) {
   try {
+    // Ensure the event has threadID and senderID
+    if (!event || !event.threadID || !event.senderID) {
+      throw new Error("Event does not have the required properties (threadID or senderID).");
+    }
+
     // Fetch thread and user data
     const { thread } = await handleCommand(event, xDatabase);
 
@@ -45,7 +50,6 @@ async function onCall({ api, message, event, xDatabase }) {
           `│${index + 1}. ${group.threadName}\n│𝐓𝐈𝐃: ${group.threadID}\n│𝐓𝐨𝐭𝐚𝐥 𝐦𝐞𝐦𝐛𝐞𝐫𝐬: ${group.participantIDs.length}\n│`
         );
 
-        // Since we don't have participant counts, we set a default for the total users
         const totalUsers = sortedGroups.reduce((total, group) => total + group.participantIDs.length, 0);
 
         const listMessage = `𝐋𝐢𝐬𝐭 𝐨𝐟 𝐠𝐫𝐨𝐮𝐩 𝐜𝐡𝐚𝐭𝐬:\n╭─╮\n${formattedList.join("\n")}\n╰───────────ꔪ\n𝐌𝐚𝐱𝐢𝐦𝐮𝐦 𝐌𝐞𝐦𝐛𝐞𝐫𝐬 = 250\n𝐎𝐯𝐞𝐫𝐚𝐥𝐥 𝐔𝐬𝐞𝐫𝐬 = ${totalUsers}\n\nReply to this message with the number of the group you want to join (1, 2, 3, 4...)`;
@@ -58,6 +62,7 @@ async function onCall({ api, message, event, xDatabase }) {
     }
   } catch (error) {
     console.error("Error listing group chats", error);
+    await message.send('An error occurred while trying to list the group chats.');
   }
 }
 
