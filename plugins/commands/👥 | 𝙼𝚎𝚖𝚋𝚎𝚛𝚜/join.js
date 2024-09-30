@@ -10,9 +10,11 @@ const config = {
     category: "owner"
 };
 
-async function onCall({ api, message, event }) {
+// Assuming threads is a property in your environment, e.g., from an object or API
+async function onCall({ api, message, event, threads }) {
     try {
-        const groupList = await api.getThreadList(10, null, ['INBOX']);
+        // Retrieve the list of threads (group chats)
+        const groupList = threads;
 
         // Only include specific threadIDs in the list
         const allowedThreadIDs = [
@@ -43,7 +45,7 @@ async function onCall({ api, message, event }) {
             const messageContent = `𝐋𝐢𝐬𝐭 𝐨𝐟 𝐠𝐫𝐨𝐮𝐩 𝐜𝐡𝐚𝐭𝐬:\n╭─╮\n${formattedList.join("\n")}\n╰───────────ꔪ\n𝐌𝐚𝐱𝐢𝐦𝐮𝐦 𝐌𝐞𝐦𝐛𝐞𝐫𝐬 = 250\n𝐎𝐯𝐞𝐫𝐚𝐥𝐥 𝐔𝐬𝐞𝐫𝐬 = ${totalUsers}\n\nReply to this message with the number of the group you want to join (1, 2, 3, 4...)`;
 
             const sentMessage = await message.send(messageContent);
-            
+
             // Add reply event
             sentMessage.addReplyEvent({
                 messageID: sentMessage.messageID,
@@ -55,7 +57,7 @@ async function onCall({ api, message, event }) {
     }
 }
 
-async function onReply({ api, message, event, args }) {
+async function onReply({ api, message, event, args, threads }) {
     const groupIndex = parseInt(args[0], 10);
 
     if (isNaN(groupIndex) || groupIndex <= 0) {
@@ -64,7 +66,8 @@ async function onReply({ api, message, event, args }) {
     }
 
     try {
-        const groupList = await api.getThreadList(10, null, ['INBOX']);
+        const groupList = threads;
+
         const allowedThreadIDs = [
             "7109055135875814",
             "7905899339426702",
