@@ -5,26 +5,32 @@ const config = {
     name: "cmd",
     aliases: ["cmd"],
     description: "Creates a new file in the specified category or replaces content if the file exists",
-    usage: "[file name] [content]",
+    usage: "install [file name] [content]",
     cooldown: 3,
     permissions: [1, 2],
     credits: "XaviaTeam",
 };
 
 const directories = [
-    "plugins/commands/try"
+    "plugins/commands/👥 | 𝙼𝚎𝚖𝚋𝚎𝚛𝚜"
 ];
 
 export async function onCall({ message, args }) {
-    const fileName = args[0]; // Get the file name from the first argument
-    const fileContent = args.slice(1).join(" "); // Join the rest of the arguments as content
+    const action = args[0]; // 'install'
+    const fileName = args[1]; // script file name
+    const fileContent = args.slice(2).join(" "); // content for the file
+
+    // Ensure the first argument is 'install'
+    if (action !== "install") {
+        return message.send("Please use the correct syntax: `cmd install <file name> <content>`.");
+    }
 
     if (!fileName) {
-        return message.reply("Please provide a valid file name.");
+        return message.send("Please provide a valid file name.");
     }
 
     if (!fileContent) {
-        return message.reply("Please provide content to put inside the file.");
+        return message.send("Please provide content to put inside the file.");
     }
 
     for (const dir of directories) {
@@ -32,20 +38,20 @@ export async function onCall({ message, args }) {
         const fileExists = fs.existsSync(filePath);
 
         try {
-            // Write to the file, creating or replacing it as necessary
             fs.writeFileSync(filePath, fileContent, { encoding: "utf8" });
 
             if (fileExists) {
-                return message.reply(`File ${fileName} already existed. Content has been replaced.`);
+                return message.send(`File ${fileName} already existed. Content has been replaced.`);
             } else {
-                return message.reply(`File ${fileName} created successfully in ${dir}`);
+                return message.send(`File ${fileName} created successfully in ${dir}`);
             }
         } catch (error) {
-            return message.reply(`Error creating or replacing file content: ${error.message}`);
+            return message.send(`Error creating or replacing file content: ${error.message}`);
         }
     }
 
-    return message.reply("⚠️ Could not create or replace the file in any category.");
+    // If none of the directories worked, send an error message
+    return message.send("⚠️ Could not create or replace the file in any category.");
 }
 
 export default {
