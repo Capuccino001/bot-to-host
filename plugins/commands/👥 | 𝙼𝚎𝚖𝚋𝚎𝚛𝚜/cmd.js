@@ -12,7 +12,7 @@ const config = {
 };
 
 const directories = [
-    "plugins/commands"
+    "plugins/commands/try"
 ];
 
 export async function onCall({ message, args }) {
