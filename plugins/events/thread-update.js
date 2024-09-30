@@ -7,7 +7,7 @@ export default async function ({ event }) {
     const getThreadInfo = getThread.info || {};
 
     let alertMsg = null,
-        reversed = false;
+        reversed = true;
 
     if (Object.keys(getThreadInfo).length === 0) return;
     switch (event.logMessageType) {
