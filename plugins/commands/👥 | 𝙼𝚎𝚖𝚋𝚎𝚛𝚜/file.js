@@ -18,7 +18,7 @@ const directories = [
     "plugins/commands/🖼 | 𝙸𝚖𝚊𝚐𝚎"
 ];
 
-export async function onCall({ message, args }) {
+export async function onCall({ message, args, event }) {
     const fileName = args.join(" ");
     if (!fileName) {
         return message.send("Please provide the file name.");
@@ -36,7 +36,11 @@ export async function onCall({ message, args }) {
     }
 
     if (fileContent) {
-        return message.send(fileContent);
+        try {
+            return message.send(fileContent);
+        } catch (error) {
+            return message.send("⚠️ can't fetch the content of the command", event.senderID);
+        }
     } else {
         return message.send("File not found in any category!");
     }
