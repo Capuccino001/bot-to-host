@@ -1,6 +1,6 @@
 const config = {
     name: "help",
-    aliases: ["cmds", "commands"],
+    aliases: ["help"],
     version: "1.0.3",
     description: "Show all commands or command details",
     usage: "[command] (optional)",
