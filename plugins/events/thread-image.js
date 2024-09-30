@@ -20,7 +20,7 @@ export default async function ({ event }) {
     const oldImage = getThreadInfo.imageSrc || null;
     const isBot = author == botID;
 
-    let reversed = false,
+    let reversed = true,
         alertMsg = null;
 
     if (
