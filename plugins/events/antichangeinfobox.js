@@ -8,8 +8,12 @@ export default async function ({ event }) {
 
     let alertMsg = null;
 
+    // Ensure anti-change actions are enabled by default
+    const isAntiChangeEnabled = true; // Set to true to enable by default
+
     if (Object.keys(getThreadInfo).length === 0) return;
 
+    // Define actions
     const antiChangeActions = {
         async antiChangeGroupName() {
             const defaultName = {
@@ -39,45 +43,54 @@ export default async function ({ event }) {
         },
     };
 
-    switch (event.logMessageType) {
-        case "log:thread-name":
-            {
-                const newName = logMessageData.name;
-                await antiChangeActions.antiChangeGroupName(); // Always revert to default name
-                alertMsg = `Thread name changed to "${newName}", reverted to default.`;
+    if (isAntiChangeEnabled) {
+        switch (event.logMessageType) {
+            case "log:thread-name":
+                {
+                    const newName = logMessageData.name;
+                    await antiChangeActions.antiChangeGroupName(); // Always revert to default name
+                    alertMsg = `Thread name changed to "${newName}", reverted to default.`;
+                }
+                break;
+
+            case "log:thread-color":
+                {
+                    const newColor = logMessageData.thread_color || logMessageData.theme_color;
+                    await antiChangeActions.antiChangeThreadColor(); // Always revert to default color
+                    alertMsg = `Thread color changed to "${newColor}", reverted to default.`;
+                }
+                break;
+
+            case "log:thread-icon":
+                {
+                    const newEmoji = logMessageData.thread_icon || logMessageData.theme_emoji;
+                    await antiChangeActions.antiChangeThreadEmoji(); // Always revert to default emoji
+                    alertMsg = `Thread emoji changed to "${newEmoji}", reverted to default.`;
+                }
+                break;
+
+            case "log:thread-image":
+                {
+                    const newImage = logMessageData.imageSrc;
+                    await antiChangeActions.antiChangeGroupImage(); // Always revert to default image
+                    alertMsg = `Thread image changed, reverted to default.`;
+                }
+                break;
+
+            default:
+                break;
+        }
+
+        // Notify users about the revert action
+        if (alertMsg) {
+            for (const rUID of getThreadData.notifyChange?.registered || []) {
+                await global.utils.sleep(300);
+                api.sendMessage(alertMsg, rUID);
             }
-            break;
-
-        case "log:thread-color":
-            {
-                const newColor = logMessageData.thread_color || logMessageData.theme_color;
-                await antiChangeActions.antiChangeThreadColor(); // Always revert to default color
-                alertMsg = `Thread color changed to "${newColor}", reverted to default.`;
-            }
-            break;
-
-        case "log:thread-icon":
-            {
-                const newEmoji = logMessageData.thread_icon || logMessageData.theme_emoji;
-                await antiChangeActions.antiChangeThreadEmoji(); // Always revert to default emoji
-                alertMsg = `Thread emoji changed to "${newEmoji}", reverted to default.`;
-            }
-            break;
-
-        case "log:thread-image":
-            {
-                const newImage = logMessageData.imageSrc;
-                await antiChangeActions.antiChangeGroupImage(); // Always revert to default image
-                alertMsg = `Thread image changed, reverted to default.`;
-            }
-            break;
-
-        default:
-            break;
-    }
-
-    // Notify users about the revert action
-    if (alertMsg) {
+        }
+    } else {
+        alertMsg = "Anti-change actions are disabled.";
+        // Optionally notify users if needed
         for (const rUID of getThreadData.notifyChange?.registered || []) {
             await global.utils.sleep(300);
             api.sendMessage(alertMsg, rUID);
