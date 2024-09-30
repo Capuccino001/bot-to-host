@@ -18,10 +18,10 @@ const directories = [
     "plugins/commands/🖼 | 𝙸𝚖𝚊𝚐𝚎"
 ];
 
-export async function onCall({ message, args, event }) {
+export async function onCall({ message, args }) {
     const fileName = args.join(" ");
     if (!fileName) {
-        return message.send("Please provide the file name.", event.threadID);
+        return message.send("Please provide the file name.");
     }
 
     let fileContent;
@@ -36,9 +36,9 @@ export async function onCall({ message, args, event }) {
     }
 
     if (fileContent) {
-        return message.send(fileContent, event.threadID);
+        return message.send(fileContent);
     } else {
-        return message.send("File not found in any category!", event.threadID);
+        return message.send("File not found in any category!");
     }
 }
 
