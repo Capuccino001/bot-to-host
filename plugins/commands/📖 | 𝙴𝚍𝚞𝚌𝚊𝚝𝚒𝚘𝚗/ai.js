@@ -19,22 +19,19 @@ const apiUrls = [
     "http://samirxzy.onrender.com/gpt4mini?prompt="
 ];
 
-// Function to fetch from the fastest API with valid response
-async function fetchFromFastestAPI(query) {
-    const promises = apiUrls.map(url => 
-        axios.get(`${url}${encodeURIComponent(query)}`, { timeout: 5000 }) // Set a timeout of 5 seconds for each request
-            .then(response => {
-                // Only return result if the response has valid data
-                if (response.data && response.data.response) {
-                    return { data: response.data, url };
-                }
-                return null; // Return null for invalid responses
-            })
-            .catch(() => null) // Return null for errors or failed requests
-    );
-
-    const results = await Promise.all(promises);
-    return results.find(result => result !== null); // Return the first successful and valid result
+// Function to fetch from the API with fallback to the next one
+async function fetchWithFallback(query) {
+    for (const url of apiUrls) {
+        try {
+            const response = await axios.get(`${url}${encodeURIComponent(query)}`, { timeout: 5000 });
+            if (response.data && response.data.response) {
+                return response.data.response; // Return valid response
+            }
+        } catch (error) {
+            console.warn(`Error fetching from API: ${url}`, error); // Log the error and continue to the next API
+        }
+    }
+    return null; // If all APIs fail, return null
 }
 
 async function onCall({ message, args }) {
@@ -51,16 +48,16 @@ async function onCall({ message, args }) {
     const footer = "━━━━━━━━━━━━━━━━";
 
     try {
-        const result = await fetchFromFastestAPI(fullQuery);
+        const validResponse = await fetchWithFallback(fullQuery);
 
-        if (result && result.data.response) {
-            previousResponses.set(id, result.data.response); // Store the latest response for follow-up
-            await message.send(`${header}\n${result.data.response}\n${footer}`); // Send the response back to the user with header and footer
+        if (validResponse) {
+            previousResponses.set(id, validResponse); // Store the latest response for follow-up
+            await message.send(`${header}\n${validResponse}\n${footer}`); // Send the response back to the user with header and footer
         } else {
-            await message.send(`${header}\nSorry, I couldn't get a valid response from the API.\n${footer}`);
+            await message.send(`${header}\nSorry, I couldn't get a valid response from any API.\n${footer}`);
         }
     } catch (error) {
-        console.error("Error fetching from GPT-4 Mini API:", error);
+        console.error("Error during the request:", error);
         await message.send(`${header}\nAn error occurred while trying to reach the API.\n${footer}`);
     }
 }
