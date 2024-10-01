@@ -7,7 +7,7 @@ const directories = [
     "plugins/commands/👥 | 𝙼𝚎𝚖𝚋𝚎𝚛𝚜",
     "plugins/commands/📖 | 𝙴𝚍𝚞𝚌𝚊𝚝𝚒𝚘𝚗",
     "plugins/commands/🖼 | 𝙸𝚖𝚊𝚐𝚎"
-];
+]; // change your directory path, depends on folder name.
 
 const config = {
     name: "delete",
@@ -23,7 +23,7 @@ async function onCall({ message, args }) {
     const fileName = args.join(" ");
     if (!fileName) return message.reply("Please provide a filename to delete.");
 
-    await message.react("🕰️"); // Indicate processing
+    await message.react("🕰️");
 
     let fileDeleted = false;
     let foundFilePath = "";
