@@ -14,7 +14,7 @@ async function onCall({ message, args }) {
 
     if (!userQuery) {
         return message.reply(
-            `🌊✨ | 𝙲𝚘𝚙𝚒𝚕𝚘𝚝\n━━━━━━━━━━━━━━━━\n⚠️ Please provide a query.\n━━━━━━━━━━━━━━━━`
+            `🌊✨ | 𝙲𝚘𝚙𝚒𝚕𝚘𝚝\n━━━━━━━━━━━━━━━━\n⚠️ Please provide a question.\n━━━━━━━━━━━━━━━━`
         );
     }
 
