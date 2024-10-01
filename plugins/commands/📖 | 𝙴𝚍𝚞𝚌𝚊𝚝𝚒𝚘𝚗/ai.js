@@ -12,28 +12,6 @@ const config = {
 
 const previousResponses = new Map(); // Map to store previous responses for each user
 
-// List of APIs
-const apiUrls = [
-    "https://samirxpikachuio.onrender.com/gpt4mini?prompt=",
-    "https://www.samirxpikachu.run" + ".place/gpt4mini?prompt=", // Separated URL for the second API
-    "http://samirxzy.onrender.com/gpt4mini?prompt="
-];
-
-// Function to fetch from the API with fallback to the next one
-async function fetchWithFallback(query) {
-    for (const url of apiUrls) {
-        try {
-            const response = await axios.get(`${url}${encodeURIComponent(query)}`, { timeout: 5000 });
-            if (response.data && response.data.response) {
-                return response.data.response; // Return valid response
-            }
-        } catch (error) {
-            console.warn(`Error fetching from API: ${url}`, error); // Log the error and continue to the next API
-        }
-    }
-    return null; // If all APIs fail, return null
-}
-
 async function onCall({ message, args }) {
     const id = message.senderID; // User ID
     const query = args.join(" ") || "hi"; // Use the user's query or default to "hi"
@@ -48,16 +26,17 @@ async function onCall({ message, args }) {
     const footer = "━━━━━━━━━━━━━━━━";
 
     try {
-        const validResponse = await fetchWithFallback(fullQuery);
+        const response = await fetch(`https://samirxpikachuio.onrender.com/gpt4mini?prompt=${encodeURIComponent(fullQuery)}`);
+        const data = await response.json();
 
-        if (validResponse) {
-            previousResponses.set(id, validResponse); // Store the latest response for follow-up
-            await message.send(`${header}\n${validResponse}\n${footer}`); // Send the response back to the user with header and footer
+        if (data.response) {
+            previousResponses.set(id, data.response); // Store the latest response for follow-up
+            await message.send(`${header}\n${data.response}\n${footer}`); // Send the response back to the user with header and footer
         } else {
-            await message.send(`${header}\nSorry, I couldn't get a valid response from any API.\n${footer}`);
+            await message.send(`${header}\nSorry, I couldn't get a response from the API.\n${footer}`);
         }
     } catch (error) {
-        console.error("Error during the request:", error);
+        console.error("Error fetching from GPT-4 Mini API:", error);
         await message.send(`${header}\nAn error occurred while trying to reach the API.\n${footer}`);
     }
 }
