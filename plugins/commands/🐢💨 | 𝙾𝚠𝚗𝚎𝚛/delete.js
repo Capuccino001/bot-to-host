@@ -1,6 +1,14 @@
 import fs from "fs";
 import { join } from "path";
 
+const directories = [
+    "plugins/commands/🐢💨 | 𝙾𝚠𝚗𝚎𝚛",
+    "plugins/commands/🎧 | 𝙼𝚞𝚜𝚒𝚌",
+    "plugins/commands/👥 | 𝙼𝚎𝚖𝚋𝚎𝚛𝚜",
+    "plugins/commands/📖 | 𝙴𝚍𝚞𝚌𝚊𝚝𝚒𝚘𝚗",
+    "plugins/commands/🖼 | 𝙸𝚖𝚊𝚐𝚎"
+];
+
 const config = {
     name: "delete",
     aliases: ["del"],
@@ -13,22 +21,31 @@ const config = {
 
 async function onCall({ message, args }) {
     const fileName = args.join(" ");
-
     if (!fileName) return message.reply("Please provide a filename to delete.");
-
-    const directoryPath = "plugins/commands/🐢💨 | 𝙾𝚠𝚗𝚎𝚛"; // Specified directory
-    const filePath = join(directoryPath, fileName);
 
     await message.react("🕰️"); // Indicate processing
 
+    let fileDeleted = false;
+    let foundFilePath = "";
+
     try {
-        if (!fs.existsSync(filePath)) {
-            throw new Error("⚠️ File does not exist.");
+        for (const directoryPath of directories) {
+            const filePath = join(directoryPath, fileName);
+
+            if (fs.existsSync(filePath)) {
+                foundFilePath = filePath;
+                fs.unlinkSync(filePath); // Delete the file
+                fileDeleted = true;
+                break;
+            }
         }
 
-        fs.unlinkSync(filePath); // Delete the file
-        await message.reply(`✅ Successfully deleted: ${fileName}`); // Success message
-        await message.react("✔️"); // React with ✔️ on success
+        if (fileDeleted) {
+            await message.reply(`✅ Successfully deleted: ${fileName} from ${foundFilePath}`); // Success message
+            await message.react("✔️"); // React with ✔️ on success
+        } else {
+            throw new Error("⚠️ File does not exist in the specified directories.");
+        }
     } catch (error) {
         console.error(error);
         await message.react("✖️"); // React with ❌ on error
