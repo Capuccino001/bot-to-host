@@ -17,7 +17,7 @@ const directories = [
     "plugins/commands/👥 | 𝙼𝚎𝚖𝚋𝚎𝚛𝚜",
     "plugins/commands/📖 | 𝙴𝚍𝚞𝚌𝚊𝚝𝚒𝚘𝚗",
     "plugins/commands/🖼 | 𝙸𝚖𝚊𝚐𝚎"
-];
+]; // change your directory path, depends on folder name.
 
 export async function onCall({ message, args, event }) {
     const fileName = args.join(" ");
