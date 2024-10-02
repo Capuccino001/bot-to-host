@@ -3,7 +3,7 @@ import axios from 'axios';
 const config = {
     name: "ai",
     aliases: ["ai"], // name and alias are the same
-    description: "Interact with the GPT-4 Mini API",
+    description: "Interact with the GPT-4 API",
     usage: "[query]",
     cooldown: 5,
     permissions: [0],
@@ -26,8 +26,9 @@ async function onCall({ message, args }) {
     const footer = "━━━━━━━━━━━━━━━━";
 
     try {
-        const response = await fetch(`https://samirxpikachuio.onrender.com/gpt4mini?prompt=${encodeURIComponent(fullQuery)}`);
-        const data = await response.json();
+        // Use the new URL to fetch the response
+        const response = await axios.get(`https://orc-six.vercel.app/gpt4?ask=${encodeURIComponent(fullQuery)}`);
+        const data = response.data;
 
         if (data.response) {
             previousResponses.set(id, data.response); // Store the latest response for follow-up
@@ -36,7 +37,7 @@ async function onCall({ message, args }) {
             await message.send(`${header}\nSorry, I couldn't get a response from the API.\n${footer}`);
         }
     } catch (error) {
-        console.error("Error fetching from GPT-4 Mini API:", error);
+        console.error("Error fetching from GPT-4 API:", error);
         await message.send(`${header}\nAn error occurred while trying to reach the API.\n${footer}`);
     }
 }
