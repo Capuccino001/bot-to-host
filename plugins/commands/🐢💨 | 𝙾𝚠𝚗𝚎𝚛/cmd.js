@@ -51,17 +51,13 @@ export async function onCall({ message, args }) {
         contentToWrite = fileContent; // Use the provided content directly.
     }
 
-    let fileReplaced = false;
-    let fileCreated = false;
-
+    // Check directories for existing file, and replace content if found
     for (const dir of directories) {
         const filePath = path.resolve(`${dir}/${fileName}`);
 
         if (fs.existsSync(filePath)) {
-            // Replace content in the first directory where the file exists
             try {
                 fs.writeFileSync(filePath, contentToWrite, { encoding: "utf8" });
-                fileReplaced = true;
                 return message.send(`File ${fileName} already existed in ${dir}. Content has been replaced.`);
             } catch (error) {
                 return message.send(`Error replacing file content: ${error.message}`);
@@ -70,21 +66,14 @@ export async function onCall({ message, args }) {
     }
 
     // If no file existed, create a new file in the first directory
-    if (!fileReplaced) {
-        const firstDir = directories[0];
-        const filePath = path.resolve(`${firstDir}/${fileName}`);
+    const firstDir = directories[0];
+    const filePath = path.resolve(`${firstDir}/${fileName}`);
 
-        try {
-            fs.writeFileSync(filePath, contentToWrite, { encoding: "utf8" });
-            fileCreated = true;
-            return message.send(`File ${fileName} created successfully in ${firstDir}.`);
-        } catch (error) {
-            return message.send(`Error creating file: ${error.message}`);
-        }
-    }
-
-    if (!fileReplaced && !fileCreated) {
-        return message.send("⚠️ Could not create or replace the file in any category.");
+    try {
+        fs.writeFileSync(filePath, contentToWrite, { encoding: "utf8" });
+        return message.send(`File ${fileName} created successfully in ${firstDir}.`);
+    } catch (error) {
+        return message.send(`Error creating file: ${error.message}`);
     }
 }
 
