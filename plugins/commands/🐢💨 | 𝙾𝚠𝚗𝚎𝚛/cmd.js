@@ -18,22 +18,13 @@ const directories = [
     "plugins/commands/👥 | 𝙼𝚎𝚖𝚋𝚎𝚛𝚜",
     "plugins/commands/📖 | 𝙴𝚍𝚞𝚌𝚊𝚝𝚒𝚘𝚗",
     "plugins/commands/🖼 | 𝙸𝚖𝚊𝚐𝚎"
-]; // change your directory paths if needed.
-
-/**
- * Note on file Installation:
- * - The script will try to save your file in a list of folders one by one.
- * - If the file doesn't exist, it will create a new file in the first folder.
- * - If the file already exists in any folder, it will change the old file's content to the new content.
- * - If it can't save the file in any folder, it will let you know there was a problem.
- */
+];
 
 export async function onCall({ message, args }) {
     const action = args[0]; // 'install'
     const fileName = args[1]; // script file name
     const fileContent = args[2]; // content or URL for the file
 
-    // Ensure the first argument is 'install'
     if (action !== "install") {
         return message.send("Please use the correct syntax: `cmd install <file name> <content/link>`.");
     }
@@ -60,26 +51,41 @@ export async function onCall({ message, args }) {
         contentToWrite = fileContent; // Use the provided content directly.
     }
 
+    let fileReplaced = false;
+    let fileCreated = false;
+
     for (const dir of directories) {
         const filePath = path.resolve(`${dir}/${fileName}`);
-        const fileExists = fs.existsSync(filePath);
 
-        try {
-            fs.writeFileSync(filePath, contentToWrite, { encoding: "utf8" });
-
-            // Check if the file already existed
-            if (fileExists) {
-                return message.send(`File ${fileName} already existed. Content has been replaced.`);
-            } else {
-                return message.send(`File ${fileName} created successfully in ${dir}`);
+        if (fs.existsSync(filePath)) {
+            // Replace content in the first directory where the file exists
+            try {
+                fs.writeFileSync(filePath, contentToWrite, { encoding: "utf8" });
+                fileReplaced = true;
+                return message.send(`File ${fileName} already existed in ${dir}. Content has been replaced.`);
+            } catch (error) {
+                return message.send(`Error replacing file content: ${error.message}`);
             }
-        } catch (error) {
-            return message.send(`Error creating or replacing file content: ${error.message}`);
         }
     }
 
-    // If none of the directories worked, send an error message
-    return message.send("⚠️ Could not create or replace the file in any category.");
+    // If no file existed, create a new file in the first directory
+    if (!fileReplaced) {
+        const firstDir = directories[0];
+        const filePath = path.resolve(`${firstDir}/${fileName}`);
+
+        try {
+            fs.writeFileSync(filePath, contentToWrite, { encoding: "utf8" });
+            fileCreated = true;
+            return message.send(`File ${fileName} created successfully in ${firstDir}.`);
+        } catch (error) {
+            return message.send(`Error creating file: ${error.message}`);
+        }
+    }
+
+    if (!fileReplaced && !fileCreated) {
+        return message.send("⚠️ Could not create or replace the file in any category.");
+    }
 }
 
 export default {
