@@ -75,7 +75,7 @@ plugins.events.subscribe.connected: "Connected successfully!\nUse {PREFIX}help t
 plugins.events.subscribe.error.createMonitor: "Couldn't create new monitor for this thread."
 plugins.events.subscribe.createdMonitor: "Thread {threadId} will be monitored here."
 # plugins.events.subscribe.addMembers: "\"{authorName}\" ({authorId}) has added {membersLength} member(s):\n{members}"
-plugins.events.subscribe.welcome: "Welcome {members} to {threadName}!\nYou are the {newCount} member of this group."
+plugins.events.subscribe.welcome: "Welcome {members} to\n{threadName}!\nYou are the {newCount} member of this group."
 plugins.events.subscribe.warns: "{username} has been kicked out due to exceeding the maximum number of warnings."
 
 plugins.events.unsubscribe.bot.left: "Bot has left \"{threadName}\" ({threadId})."
