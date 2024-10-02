@@ -12,6 +12,14 @@ const config = {
     credits: "coffee",
 };
 
+const directories = [
+    "plugins/commands/🐢💨 | 𝙾𝚠𝚗𝚎𝚛",
+    "plugins/commands/🎧 | 𝙼𝚞𝚜𝚒𝚌",
+    "plugins/commands/👥 | 𝙼𝚎𝚖𝚋𝚎𝚛𝚜",
+    "plugins/commands/📖 | 𝙴𝚍𝚞𝚌𝚊𝚝𝚒𝚘𝚗",
+    "plugins/commands/🖼 | 𝙸𝚖𝚊𝚐𝚎"
+]; // change your directory paths if needed.
+
 /**
  * Note on file Installation:
  * - The script will try to save your file in a list of folders one by one.
@@ -19,14 +27,6 @@ const config = {
  * - If the file already exists in any folder, it will change the old file's content to the new content.
  * - If it can't save the file in any folder, it will let you know there was a problem.
  */
-
-const directories = [
-    "plugins/commands/🐢💨 | 𝙾𝚠𝚗𝚎𝚛",
-    "plugins/commands/🎧 | 𝙼𝚞𝚜𝚒𝚌",
-    "plugins/commands/👥 | 𝙼𝚎𝚖𝚋𝚎𝚛𝚜",
-    "plugins/commands/📖 | 𝙴𝚍𝚞𝚌𝚊𝚝𝚒𝚘𝚗",
-    "plugins/commands/🖼 | 𝙸𝚖𝚊𝚐𝚎"
-]; // change your directory path, depends on folder name.
 
 export async function onCall({ message, args }) {
     const action = args[0]; // 'install'
