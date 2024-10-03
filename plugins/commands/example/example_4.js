@@ -1,5 +1,5 @@
 const config = {
-    name: "example",
+    name: "exampledefault",
     aliases: ["ex"],
     description: "This is an example command",
     usage: "[query]",
