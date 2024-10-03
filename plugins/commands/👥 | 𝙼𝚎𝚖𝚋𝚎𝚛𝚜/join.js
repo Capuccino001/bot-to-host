@@ -8,7 +8,7 @@ const config = {
     credits: "Kshitiz/coffee",
 };
 
-// Make sure global.onReply is initialized as a Map if it isn't already
+// Ensure global.onReply is initialized as a Map if it isn't already
 if (!global.onReply) {
     global.onReply = new Map();
 }
@@ -55,7 +55,7 @@ async function onCall({ message, event }) {
         global.onReply.set(sentMessage.messageID, {
             commandName: 'join',
             messageID: sentMessage.messageID,
-            author: event.senderID,
+            author: message.senderID, // Use message.senderID instead of event.senderID
             groupList: sortedList, // Save the sorted group list for the reply handler
         });
 
@@ -65,17 +65,18 @@ async function onCall({ message, event }) {
     }
 }
 
-async function onReply({ event, Reply, args }) {
+async function onReply({ message, Reply, args }) {
+    // Use message.messageReply to get the sender ID
     const { author, groupList } = Reply;
 
-    if (event.senderID !== author) {
+    if (message.senderID !== author) {
         return; // Ignore if the reply is not from the original user
     }
 
     const groupIndex = parseInt(args[0], 10);
 
     if (isNaN(groupIndex) || groupIndex <= 0 || groupIndex > groupList.length) {
-        await global.api.sendMessage('Invalid group number. Please choose a valid number.', event.threadID, event.messageID);
+        await message.reply('Invalid group number. Please choose a valid number.');
         return;
     }
 
@@ -86,25 +87,25 @@ async function onReply({ event, Reply, args }) {
         // Retrieve member list using getThreadInfo
         const memberList = await global.api.getThreadInfo(groupID);
 
-        if (memberList.participantIDs.includes(event.senderID)) {
-            await global.api.sendMessage(`You're already in the group chat: ${selectedGroup.threadName}`, event.threadID, event.messageID);
+        if (memberList.participantIDs.includes(message.senderID)) {
+            await message.reply(`You're already in the group chat: ${selectedGroup.threadName}`);
             return;
         }
 
         if (memberList.participantIDs.length >= 250) {
-            await global.api.sendMessage(`The group chat is full: ${selectedGroup.threadName}`, event.threadID, event.messageID);
+            await message.reply(`The group chat is full: ${selectedGroup.threadName}`);
             return;
         }
 
         // Add the user to the group
-        await global.api.addUserToGroup(event.senderID, groupID);
-        await global.api.sendMessage(`You've joined the group chat: ${selectedGroup.threadName}`, event.threadID, event.messageID);
+        await global.api.addUserToGroup(message.senderID, groupID);
+        await message.reply(`You've joined the group chat: ${selectedGroup.threadName}`);
     } catch (error) {
         console.error("Error joining group chat", error);
-        await global.api.sendMessage("⚠️ An error occurred while trying to join the group.", event.threadID, event.messageID);
+        await message.reply("⚠️ An error occurred while trying to join the group.");
     } finally {
         // Remove the reply handler
-        global.onReply.delete(event.messageID);
+        global.onReply.delete(message.messageID);
     }
 }
 
