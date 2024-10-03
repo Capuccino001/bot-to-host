@@ -18,7 +18,7 @@ async function onCall({ message, args }) {
 
     // Handle case where no query is provided
     if (!userQuery) {
-        return message.reply("👩‍💻✨ | 𝙶𝚎𝚖𝚒𝚗𝚒\n━━━━━━━━━━━━━━━━\nHello! How can I assist you today?\n━━━━━━━━━━━━━━━━");
+        return message.reply("👩‍💻✨ | 𝙶𝚎𝚖𝚒𝚗𝚒\n・──────────────・\nHello! How can I assist you today?\n・───── >ᴗ< ──────・");
     }
 
     // Check for previous response to handle follow-ups
@@ -37,7 +37,7 @@ async function onCall({ message, args }) {
         // Validate the response and respond accordingly
         if (data?.gemini) {
             previousResponses.set(userId, data.gemini); // Store the latest response
-            await message.reply(`👩‍💻✨ | 𝙶𝚎𝚖𝚒𝚗𝚒\n━━━━━━━━━━━━━━━━\n${data.gemini}\n━━━━━━━━━━━━━━━━`);
+            await message.reply(`ᯓ★ | 𝙶𝚎𝚖𝚒𝚗𝚒\n・──────────────・\n${data.gemini}\n・───── >ᴗ< ──────・`);
             await message.react("✔️"); // React with ✔️ on success
         } else {
             throw new Error("Unexpected response format from API");
