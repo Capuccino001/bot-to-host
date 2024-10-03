@@ -14,7 +14,7 @@ const config = {
 async function onCall({ message, args }) {
     // Handle case where no query is provided
     if (!args.length) {
-        return message.reply("🗨️✨ | 𝙲𝚑𝚊𝚝𝙶𝙿𝚃\n━━━━━━━━━━━━━━━━\nHello! How can I assist you today?\n━━━━━━━━━━━━━━━━");
+        return message.reply("ᝰ.ᐟ | 𝙲𝚑𝚊𝚝𝙶𝙿𝚃\n・──────────────・\nHello! How can I assist you today?\n・───── >ᴗ< ──────・");
     }
 
     const query = args.join(" ");
@@ -36,9 +36,9 @@ async function onCall({ message, args }) {
 
         // Validate the response
         if (data?.gpt4) {
-            await message.send(`🗨️✨ | 𝙲𝚑𝚊𝚝𝙶𝙿𝚃\n━━━━━━━━━━━━━━━━\n${data.gpt4}\n━━━━━━━━━━━━━━━━`);
+            await message.send(`ᝰ.ᐟ | 𝙲𝚑𝚊𝚝𝙶𝙿𝚃\n・──────────────・\n${data.gpt4}\n・───── >ᴗ< ──────・`);
         } else {
-            await message.send("🗨️✨ | 𝙲𝚊𝚝𝙶𝙿𝚃\n━━━━━━━━━━━━━━━━\nError: Unexpected response format from API.\n━━━━━━━━━━━━━━━━");
+            await message.send("ᝰ.ᐟ | 𝙲𝚊𝚝𝙶𝙿𝚃\n・──────────────・\nError: Unexpected response format from API.\n・───── >ᴗ< ──────・");
         }
     } catch (error) {
         // Log the error for debugging
