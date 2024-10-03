@@ -43,7 +43,7 @@ async function onCall({ message, args }) {
     } catch (error) {
         // Log the error for debugging
         console.error("API call failed: ", error);
-        await message.react(`❎`);
+        await message.react(`✖️`);
         await message.send("An error occurred while fetching the data."); // Inform the user about the error
     }
 }
