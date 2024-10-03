@@ -1,27 +1,24 @@
 const config = {
     name: "copilot",
-    aliases: ["cp", "assistant"],
-    description: "Copilot command to interact with Bing API.",
-    usage: "[query]",
+    aliases: ["copilot", "assistant"],
+    description: "Interact with Bing Copilot Ai",
+    usage: "[message]",
     cooldown: 3,
     permissions: [0],
     credits: "Coffee",
 };
 
 async function onCall({ message, args }) {
-    const userQuery = args.join(" ");
-    const userId = 100; // Set the user ID as 100
+    const userMessage = args.join(" ");
 
-    if (!userQuery) {
-        return message.reply(
-            `🌊✨ | 𝙲𝚘𝚙𝚒𝚕𝚘𝚝\n━━━━━━━━━━━━━━━━\n⚠️ Please provide a question.\n━━━━━━━━━━━━━━━━`
-        );
-    }
+    const header = "🌊✨ | 𝙲𝚘𝚙𝚒𝚕𝚘𝚝\n━━━━━━━━━━━━━━━━";
+    const footer = "━━━━━━━━━━━━━━━━";
+
+    if (!userMessage) return message.reply(`${header}\n⚠️ Please provide a question.\n${footer}`);
 
     await message.react("🕰️"); // Indicate processing
 
-    // Construct the API URL using the provided query and user ID set to 100
-    const apiUrl = `https://samirxpikachuio.onrender.com/bing?message=${encodeURIComponent(userQuery)}&mode=1&uid=${userId}`;
+    const apiUrl = `https://www.samirxpikachu.run.place/bing?message=${encodeURIComponent(userMessage)}&mode=1&uid=23`;
 
     try {
         const response = await fetch(apiUrl);
@@ -30,16 +27,12 @@ async function onCall({ message, args }) {
 
         const { result = "⚠️ Sorry, I couldn't find a result." } = await response.json();
 
-        await message.reply(
-            `🌊✨ | 𝙲𝚘𝚙𝚒𝚕𝚘𝚝\n━━━━━━━━━━━━━━━━\n${result}\n━━━━━━━━━━━━━━━━`
-        );
+        await message.reply(`${header}\n${result}\n${footer}`); // Send back the result with header and footer
         await message.react("✔️"); // React with ✅ on success
     } catch (error) {
         console.error(error);
         await message.react("✖️"); // React with ❎ on error
-        await message.reply(
-            `🌊✨ | 𝙲𝚘𝚙𝚒𝚕𝚘𝚝\n━━━━━━━━━━━━━━━━\n⚠️ Sorry, I couldn't process your query. Please try again later.\n━━━━━━━━━━━━━━━━`
-        );
+        await message.reply(`${header}\n⚠️ An error occurred while fetching the data.\n${footer}`); // Error message with header and footer
     }
 }
 
