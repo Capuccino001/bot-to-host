@@ -1,17 +1,22 @@
-const commandFiles = [
-    { category: "📖 | 𝙴𝚍𝚞𝚌𝚊𝚝𝚒𝚘𝚗", commands: ['ai', 'blackbox', 'copilot', 'gemini', 'gpt', 'translate'] },
-    { category: "🖼 | 𝙸𝚖𝚊𝚐𝚎", commands: ['imagine', 'pinterest', 'removebg', 'remini'] },
-    { category: "🎧 | 𝙼𝚞𝚜𝚒𝚌", commands: ['lyrics', 'spotify', 'chords'] },
-    { category: "👥 | 𝙼𝚎𝚖𝚋𝚎𝚛𝚜", commands: ['tempmail', 'tid', 'uid', 'unsend', 'help', 'alldl', 'font', 'adduser'] }
-];
+import fs from 'fs';
+import path from 'path';
 
-// Flatten the command files into an array of objects with paths and names
-const commandFilesWithPaths = commandFiles.flatMap(({ category, commands }) =>
-    commands.map(command => ({
-        path: `../commands/${category}/${command}.js`,
-        name: command
-    }))
-);
+// Define the base directory where the commands are located (update to match your structure)
+const commandsDir = path.join(__dirname, 'plugins/commands');
+
+// Recursively fetch all command files from the directory
+const getCommandFiles = (dir) => {
+    return fs.readdirSync(dir).reduce((files, file) => {
+        const fullPath = path.join(dir, file);
+        if (fs.statSync(fullPath).isDirectory()) {
+            return files.concat(getCommandFiles(fullPath));  // Traverse subdirectories
+        } else if (file.endsWith('.js')) {
+            return files.concat(fullPath);  // Include only JavaScript files
+        } else {
+            return files;
+        }
+    }, []);
+};
 
 // Load a command module from the specified file path
 const loadCommand = async (filePath) => {
@@ -24,14 +29,38 @@ const loadCommand = async (filePath) => {
     }
 };
 
+// Get all command files dynamically
+const loadCommands = async () => {
+    const commandFiles = getCommandFiles(commandsDir);
+
+    const commandsWithPaths = await Promise.all(
+        commandFiles.map(async (filePath) => {
+            const commandModule = await loadCommand(`file://${filePath}`);
+
+            if (commandModule?.config && commandModule.config.name) {
+                return {
+                    path: filePath,
+                    name: commandModule.config.name
+                };
+            }
+            return null;
+        })
+    );
+
+    // Filter out null values (invalid or missing commands)
+    return commandsWithPaths.filter(Boolean);
+};
+
 // Main handler for incoming messages
 async function onCall({ message }) {
     const input = message.body.trim().toLowerCase();
+    const commandFilesWithPaths = await loadCommands();  // Load command files dynamically
+
     const commandEntry = commandFilesWithPaths.find(({ name }) => input.startsWith(name));
 
     if (commandEntry) {
         const { path, name } = commandEntry;
-        const command = await loadCommand(path);
+        const command = await loadCommand(`file://${path}`);
 
         if (command?.config && command.onCall) {
             const args = input.slice(name.length).trim().split(" ");
