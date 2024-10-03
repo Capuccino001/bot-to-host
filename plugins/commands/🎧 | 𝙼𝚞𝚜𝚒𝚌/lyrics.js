@@ -34,7 +34,7 @@ async function fetchLyrics(message, songName) {
 }
 
 function sendFormattedLyrics(message, title, artist, lyrics) {
-    const formattedLyrics = `🎧 | Title: ${title}\n🎤 | Artist: ${artist}\n・──────────────・\n${lyrics}\n・───── >ᴗ< ──────・`;
+    const formattedLyrics = `🎧 | Title: ${title}\n🎤 | Artist: ${artist}\n・───── >ᴗ< ──────・\n${lyrics}\n・──────────────・`;
     message.send(formattedLyrics);
 }
 
