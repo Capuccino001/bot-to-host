@@ -23,7 +23,7 @@ async function onCall({ message, args, global }) {
     ];
 
     // Case 1: If the user just types `join`, list available groups
-    if (args.length === 0 || isNaN(args[0])) {
+    if (args.length === 0) {
         try {
             // Use global.api to get the thread list
             const groupList = await global.api.getThreadList(10, null, ['INBOX']);
