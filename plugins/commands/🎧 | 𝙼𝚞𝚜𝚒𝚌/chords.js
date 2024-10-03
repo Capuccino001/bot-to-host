@@ -35,9 +35,9 @@ async function onCall({ message, args }) {
             const replyMessage = `
 🎧 | Title: ${title}
 🎤 | Artist: ${artist}
-・──────────────・
-${chords}
 ・───── >ᴗ< ──────・
+${chords}
+・──────────────・
             `;
             message.send(replyMessage);
         } else {
