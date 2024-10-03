@@ -1,6 +1,6 @@
 const config = {
-    name: "example",
-    aliases: ["example"],
+    name: "exampleapi",
+    aliases: ["example1"],
     description: "Example command template.",
     usage: "[query]",
     cooldown: 3,
