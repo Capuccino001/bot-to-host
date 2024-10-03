@@ -1,8 +1,8 @@
 import samirapi from 'samirapi';
 
 const config = {
-    name: "exampleCommand",
-    aliases: ["example"],
+    name: "examplepkg",
+    aliases: ["example2"],
     description: "Description of the example command.",
     usage: "[query]",
     cooldown: 5,
