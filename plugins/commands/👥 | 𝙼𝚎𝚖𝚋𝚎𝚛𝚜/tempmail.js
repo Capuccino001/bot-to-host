@@ -41,7 +41,7 @@ async function createTempEmail(message) {
         if (!email) {
             throw new Error("Email not generated.");
         }
-        return message.send(`━━━━━━━━━━━━━━━━\n📩 Generated Email:\n ${email}\n━━━━━━━━━━━━━━━━`);
+        return message.send(`・──────────────・\n📩 Generated Email:\n ${email}\n・───── >ᴗ< ──────・`);
     } catch (error) {
         console.error("❌ | Failed to generate email", error.message);
         return message.send(`❌ | Failed to generate email. Error: ${error.message}`);
