@@ -1,4 +1,5 @@
 const config = {
+    name: "prefix",
     aliases: ["pf", "setprefix", "setpf"],
     permissions: [1, 2],
     description: "Set prefix for group",
