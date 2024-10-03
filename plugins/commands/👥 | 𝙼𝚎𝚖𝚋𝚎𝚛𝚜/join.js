@@ -1,135 +1,115 @@
 const config = {
-  name: "join",
-  version: "2.0",
-  author: "Kshitiz/coffee",
-  role: 0,
-  category: "owner",
-  permissions: [1, 2],
+    name: "join",
+    aliases: [],
+    version: "2.0",
+    cooldown: 3,
+    permissions: [0],
+    description: "Join a specific group from the allowed list",
+    credits: "XaviaTeam",
+    extra: {
+        allowedThreadIDs: [
+            "7109055135875814",
+            "7905899339426702",
+            "7188533334598873",
+            "25540725785525846",
+            "26605074275750715"
+        ]
+    }
 };
 
-async function handleCommand(event, xDatabase) {
-  const { threadID, senderID } = event;
-  const { Threads, Users } = xDatabase.controllers;
-
-  // Fetch group and user data using the provided database controllers
-  const _thread = event.isGroup === true ? await Threads.get(threadID) : null;
-  const _user = await Users.get(senderID);
-
-  // Use this data for further processing
-  return { thread: _thread, user: _user };
-}
-
-async function onCall({ api, message, event, xDatabase }) {
-  try {
-    // Ensure the event has threadID and senderID
-    if (!event || !event.threadID || !event.senderID) {
-      throw new Error("Event does not have the required properties (threadID or senderID).");
+const langData = {
+    "en": {
+        "noGroups": "No group chats found.",
+        "groupListMessage": "List of group chats:\n╭─╮\n{list}\n╰───────────ꔪ\nMaximum Members = 250\nOverall Users = {totalUsers}\n\nReply to this message with the number of the group you want to join (1, 2, 3, 4...)",
+        "invalidInput": "Invalid input. Please provide a valid number.",
+        "groupFull": "Can't add you, the group chat is full: \n{groupName}",
+        "alreadyInGroup": "Can't add you, you are already in the group chat: \n{groupName}",
+        "groupJoinSuccess": "You have joined the group chat: {groupName}",
+        "privateChatError": "Failed to add you to the group because you have set your chat to private only. \n▫ Do this to fix it ▫\nchat settings > privacy&safety > message delivery > Others > message requests."
     }
+};
 
-    // Fetch thread and user data
-    const { thread } = await handleCommand(event, xDatabase);
+/** @type {TOnCallCommand} */
+async function onCall({ api, event, getLang, extra, message }) {
+    try {
+        const groupList = await api.getThreadList(10, null, ['INBOX']);
+        const allowedThreadIDs = extra.allowedThreadIDs;
 
-    // Check if the current thread is a group chat and proceed
-    if (thread) {
-      // Pre-defined allowed thread data (hardcoded)
-      const allowedGroups = [
-        { threadID: "7109055135875814", threadName: "Group A", participantIDs: [] },
-        { threadID: "7905899339426702", threadName: "Group B", participantIDs: [] },
-        { threadID: "7188533334598873", threadName: "Group C", participantIDs: [] },
-        { threadID: "25540725785525846", threadName: "Group D", participantIDs: [] },
-        { threadID: "26605074275750715", threadName: "Group E", participantIDs: [] }
-      ];
+        const filteredList = groupList.filter(group => allowedThreadIDs.includes(group.threadID));
+        const sortedList = filteredList.sort((a, b) => b.participantIDs.length - a.participantIDs.length);
 
-      // Sort the groups by participant count (empty in this example)
-      const sortedGroups = allowedGroups.sort((a, b) => b.participantIDs.length - a.participantIDs.length);
+        if (sortedList.length === 0) {
+            return message.send(getLang("noGroups"), event.threadID);
+        }
 
-      if (sortedGroups.length === 0) {
-        await message.send('No group chats found.');
-      } else {
-        const formattedList = sortedGroups.map((group, index) =>
-          `│${index + 1}. ${group.threadName}\n│𝐓𝐈𝐃: ${group.threadID}\n│𝐓𝐨𝐭𝐚𝐥 𝐦𝐞𝐦𝐛𝐞𝐫𝐬: ${group.participantIDs.length}\n│`
+        const formattedList = sortedList.map((group, index) =>
+            `│${index + 1}. ${group.threadName}\n│𝐓𝐈𝐃: ${group.threadID}\n│𝐓𝐨𝐭𝐚𝐥 𝐦𝐞𝐦𝐛𝐞𝐫𝐬: ${group.participantIDs.length}\n│`
         );
+        const totalUsers = sortedList.reduce((total, group) => total + group.participantIDs.length, 0);
 
-        const totalUsers = sortedGroups.reduce((total, group) => total + group.participantIDs.length, 0);
+        const groupListMessage = getLang("groupListMessage")
+            .replace("{list}", formattedList.join("\n"))
+            .replace("{totalUsers}", totalUsers);
 
-        const listMessage = `𝐋𝐢𝐬𝐭 𝐨𝐟 𝐠𝐫𝐨𝐮𝐩 𝐜𝐡𝐚𝐭𝐬:\n╭─╮\n${formattedList.join("\n")}\n╰───────────ꔪ\n𝐌𝐚𝐱𝐢𝐦𝐮𝐦 𝐌𝐞𝐦𝐛𝐞𝐫𝐬 = 250\n𝐎𝐯𝐞𝐫𝐚𝐥𝐥 𝐔𝐬𝐞𝐫𝐬 = ${totalUsers}\n\nReply to this message with the number of the group you want to join (1, 2, 3, 4...)`;
-
-        const msgData = await message.send(listMessage);
-        msgData.addReplyEvent({ callback: onReply });
-      }
-    } else {
-      await message.send('This command is only available in group chats.');
+        const sentMessage = await message.send(groupListMessage, event.threadID);
+        
+        message.replyData.set(sentMessage.messageID, {
+            commandName: 'join',
+            messageID: sentMessage.messageID,
+            author: event.senderID,
+        });
+    } catch (error) {
+        console.error("Error listing group chats", error);
     }
-  } catch (error) {
-    console.error("Error listing group chats", error);
-    await message.send('An error occurred while trying to list the group chats.');
-  }
 }
 
-async function onReply({ api, message, args, Reply }) {
-  const { author } = Reply;
+/** @type {TReplyCallback} */
+async function onReply({ api, event, Reply, args, getLang, extra, message }) {
+    const { author } = Reply;
 
-  if (message.senderID !== author) {
-    return;
-  }
+    if (event.senderID !== author) return;
 
-  const groupIndex = parseInt(args[0], 10);
-
-  if (isNaN(groupIndex) || groupIndex <= 0) {
-    await message.send('Invalid input.\nPlease provide a valid number.');
-    return;
-  }
-
-  try {
-    // Pre-defined allowed group data (hardcoded)
-    const allowedGroups = [
-      { threadID: "7109055135875814", threadName: "Group A", participantIDs: [] },
-      { threadID: "7905899339426702", threadName: "Group B", participantIDs: [] },
-      { threadID: "7188533334598873", threadName: "Group C", participantIDs: [] },
-      { threadID: "25540725785525846", threadName: "Group D", participantIDs: [] },
-      { threadID: "26605074275750715", threadName: "Group E", participantIDs: [] }
-    ];
-
-    // Sort the groups manually
-    const sortedGroups = allowedGroups.sort((a, b) => b.participantIDs.length - a.participantIDs.length);
-
-    if (groupIndex > sortedGroups.length) {
-      await message.send('Invalid group number.\nPlease choose a number within the range.');
-      return;
+    const groupIndex = parseInt(args[0], 10);
+    if (isNaN(groupIndex) || groupIndex <= 0) {
+        return message.send(getLang("invalidInput"), event.threadID, event.messageID);
     }
 
-    const selectedGroup = sortedGroups[groupIndex - 1];
-    const groupID = selectedGroup.threadID;
+    try {
+        const groupList = await api.getThreadList(10, null, ['INBOX']);
+        const allowedThreadIDs = extra.allowedThreadIDs;
 
-    // Simulate fetching participant IDs for the selected group (hardcoded as empty)
-    const memberList = await api.getThreadInfo(groupID);  // May need replacement logic if unavailable
-    if (memberList.participantIDs.includes(message.senderID)) {
-      await message.send(`Can't add you, you are already in the group chat: \n${selectedGroup.threadName}`);
-      return;
+        const filteredList = groupList.filter(group => allowedThreadIDs.includes(group.threadID));
+        const sortedList = filteredList.sort((a, b) => b.participantIDs.length - a.participantIDs.length);
+
+        if (groupIndex > sortedList.length) {
+            return message.send(getLang("invalidInput"), event.threadID, event.messageID);
+        }
+
+        const selectedGroup = sortedList[groupIndex - 1];
+        const groupID = selectedGroup.threadID;
+
+        const memberList = await api.getThreadInfo(groupID);
+        if (memberList.participantIDs.includes(event.senderID)) {
+            return message.send(getLang("alreadyInGroup").replace("{groupName}", selectedGroup.threadName), event.threadID, event.messageID);
+        }
+
+        if (memberList.participantIDs.length >= 250) {
+            return message.send(getLang("groupFull").replace("{groupName}", selectedGroup.threadName), event.threadID, event.messageID);
+        }
+
+        await api.addUserToGroup(event.senderID, groupID);
+        message.send(getLang("groupJoinSuccess").replace("{groupName}", selectedGroup.threadName), event.threadID, event.messageID);
+    } catch (error) {
+        console.error("Error joining group chat", error);
+        message.send(getLang("privateChatError"), event.threadID, event.messageID);
+    } finally {
+        message.replyData.delete(event.messageID);
     }
-
-    // Check if the group is full
-    if (memberList.participantIDs.length >= 250) {
-      await message.send(`Can't add you, the group chat is full: \n${selectedGroup.threadName}`);
-      return;
-    }
-
-    // Add the user to the group (if the API supports this action)
-    await api.addUserToGroup(message.senderID, groupID);
-    await message.send(`You have joined the group chat: ${selectedGroup.threadName}`);
-  } catch (error) {
-    console.error("Error joining group chat", error);
-    let errorMessage = 'Failed to add you to the group due to privacy settings.';
-
-    if (error.response && error.response.error) {
-      errorMessage += `\nError: ${error.response.error}`;
-    }
-
-    await message.send(errorMessage);
-  }
 }
 
 export default {
-  config,
-  onCall,
+    config,
+    langData,
+    onCall,
+    onReply
 };
