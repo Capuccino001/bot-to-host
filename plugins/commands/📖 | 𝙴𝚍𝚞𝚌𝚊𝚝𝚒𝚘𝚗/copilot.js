@@ -11,8 +11,8 @@ const config = {
 async function onCall({ message, args }) {
     const userMessage = args.join(" ");
 
-    const header = "🌊✨ | 𝙲𝚘𝚙𝚒𝚕𝚘𝚝\n━━━━━━━━━━━━━━━━";
-    const footer = "━━━━━━━━━━━━━━━━";
+    const header = "✧₊⁺ | 𝙲𝚘𝚙𝚒𝚕𝚘𝚝\n・──────────────・";
+    const footer = "・───── >ᴗ< ──────・";
 
     if (!userMessage) return message.reply(`${header}\n⚠️ Please provide a question.\n${footer}`);
 
