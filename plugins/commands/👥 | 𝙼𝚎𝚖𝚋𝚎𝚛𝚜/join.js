@@ -8,6 +8,11 @@ const config = {
     credits: "Kshitiz/coffee",
 };
 
+// Make sure global.onReply is initialized as a Map if it isn't already
+if (!global.onReply) {
+    global.onReply = new Map();
+}
+
 async function onCall({ message, event }) {
     const allowedThreadIDs = [
         "7109055135875814", 
