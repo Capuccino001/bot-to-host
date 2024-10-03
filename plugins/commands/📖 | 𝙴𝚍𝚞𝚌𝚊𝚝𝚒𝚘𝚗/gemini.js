@@ -18,7 +18,7 @@ async function onCall({ message, args }) {
 
     // Handle case where no query is provided
     if (!userQuery) {
-        return message.reply("👩‍💻✨ | 𝙶𝚎𝚖𝚒𝚗𝚒\n・──────────────・\nHello! How can I assist you today?\n・───── >ᴗ< ──────・");
+        return message.reply("ᯓ★ | 𝙶𝚎𝚖𝚒𝚗𝚒\n・──────────────・\nHello! How can I assist you today?\n・───── >ᴗ< ──────・");
     }
 
     // Check for previous response to handle follow-ups
