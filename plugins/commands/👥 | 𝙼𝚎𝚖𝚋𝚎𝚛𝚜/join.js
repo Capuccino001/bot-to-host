@@ -8,7 +8,7 @@ const config = {
     credits: "Kshitiz/coffee",
 };
 
-async function onCall({ message, global, event }) {
+async function onCall({ message, event }) {
     const allowedThreadIDs = [
         "7109055135875814", 
         "7905899339426702", 
@@ -60,7 +60,7 @@ async function onCall({ message, global, event }) {
     }
 }
 
-async function onReply({ event, Reply, args, global }) {
+async function onReply({ event, Reply, args }) {
     const { author, groupList } = Reply;
 
     if (event.senderID !== author) {
