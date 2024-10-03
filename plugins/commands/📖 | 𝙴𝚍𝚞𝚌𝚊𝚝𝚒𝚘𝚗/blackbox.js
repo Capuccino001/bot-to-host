@@ -18,7 +18,7 @@ async function onCall({ message, args }) {
 
         // Check if the response contains the expected data
         if (data && data.response) {
-            const formattedResponse = `🗃 | 𝙱𝚕𝚊𝚌𝚔 𝙱𝚘𝚡 |\n━━━━━━━━━━━━━━━━\n${data.response}\n━━━━━━━━━━━━━━━━`;
+            const formattedResponse = `🗃 | 𝙱𝚕𝚊𝚌𝚔 𝙱𝚘𝚡 |\n・──────────────・\n${data.response}\n・───── >ᴗ< ──────・`;
             await message.send(formattedResponse);
         } else {
             await message.send("No response from the API.");
