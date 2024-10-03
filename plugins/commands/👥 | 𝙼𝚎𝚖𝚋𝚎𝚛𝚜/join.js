@@ -9,7 +9,6 @@ const config = {
 };
 
 async function onCall({ message, args, global, event }) {
-    const { api } = global;
     const userQuery = args.join(" ");
     const allowedThreadIDs = [
         "7109055135875814", 
@@ -32,8 +31,13 @@ async function onCall({ message, args, global, event }) {
     }
 
     try {
-        const groupList = await api.getThreadList(10, null, ['INBOX']);
+        // Use global.api to get the thread list instead of destructuring
+        const groupList = await global.api.getThreadList(10, null, ['INBOX']);
+        
+        // Filter based on allowedThreadIDs
         const filteredList = groupList.filter(group => allowedThreadIDs.includes(group.threadID));
+        
+        // Sort the filtered group list by participant count (descending)
         const sortedList = filteredList.sort((a, b) => b.participantIDs.length - a.participantIDs.length);
 
         if (groupIndex > sortedList.length) {
@@ -43,7 +47,12 @@ async function onCall({ message, args, global, event }) {
 
         const selectedGroup = sortedList[groupIndex - 1];
         const groupID = selectedGroup.threadID;
-        const memberList = await api.getThreadInfo(groupID);
+
+        // Retrieve the group details using Threads.get()
+        const groupThread = await Threads.get(groupID);
+
+        // Retrieve member list using getThreadInfo
+        const memberList = await global.api.getThreadInfo(groupID);
 
         if (memberList.participantIDs.includes(event.senderID)) {
             await message.reply(`You're already in the group chat: ${selectedGroup.threadName}`);
@@ -55,7 +64,8 @@ async function onCall({ message, args, global, event }) {
             return;
         }
 
-        await api.addUserToGroup(event.senderID, groupID);
+        // Use global.api to add the user to the group
+        await global.api.addUserToGroup(event.senderID, groupID);
         await message.reply(`You've joined the group chat: ${selectedGroup.threadName}`);
     } catch (error) {
         console.error(error);
