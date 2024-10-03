@@ -25,7 +25,13 @@ async function onCall({ message, args }) {
 
         if (!response.ok) throw new Error("⚠️ Failed to fetch data");
 
-        const result = await response.text(); // API response is plain text
+        let result = await response.text(); // API response is plain text
+
+        // Format the fetched response for better readability
+        result = result
+            .replace(/\\n/g, '\n') // Replace newline characters with actual new lines
+            .replace(/\n{2,}/g, '\n\n') // Ensure double new lines between paragraphs
+            .trim(); // Remove any unnecessary leading or trailing whitespace
 
         await message.reply(`${header}\n${result}\n${footer}`); // Send back the result with header and footer
         await message.react("✔️"); // React with ✅ on success
