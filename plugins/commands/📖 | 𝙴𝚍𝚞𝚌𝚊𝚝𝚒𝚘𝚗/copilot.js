@@ -25,7 +25,7 @@ async function onCall({ message, args }) {
 
         if (!response.ok) throw new Error("⚠️ Failed to fetch data");
 
-        const { result = "⚠️ Sorry, I couldn't find a result." } = await response.json();
+        const result = await response.text(); // API response is plain text
 
         await message.reply(`${header}\n${result}\n${footer}`); // Send back the result with header and footer
         await message.react("✔️"); // React with ✅ on success
