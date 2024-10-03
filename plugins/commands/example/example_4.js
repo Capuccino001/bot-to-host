@@ -1,6 +1,6 @@
 const config = {
     name: "exampledefault",
-    aliases: ["ex"],
+    aliases: ["exd"],
     description: "This is an example command",
     usage: "[query]",
     cooldown: 3,
