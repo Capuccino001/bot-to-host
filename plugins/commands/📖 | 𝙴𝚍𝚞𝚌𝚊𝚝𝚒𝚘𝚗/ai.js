@@ -17,8 +17,8 @@ async function onCall({ message, args }) {
     const userId = message.senderID; // Use the sender's ID to track requests
     const query = args.join(" ") || "hi"; // Use the user's query or default to "hi"
 
-    const header = "🧋✨ | 𝙼𝚘𝚌𝚑𝚊 𝙰𝚒\n━━━━━━━━━━━━━━━━";
-    const footer = "━━━━━━━━━━━━━━━━";
+    const header = "(⁠◍⁠•⁠ᴗ⁠•⁠◍⁠) | 𝙼𝚘𝚌𝚑𝚊 𝙰𝚒\n・──────────────・";
+    const footer = "・───── >ᴗ< ──────・";
 
     // Store the user's query or combine it with their previous one
     if (userQueries[userId]) {
