@@ -1,67 +1,57 @@
-import fs from "fs";
-import path from "path";
 import samirapi from 'samirapi';
+import fs from 'fs';
+import path from 'path';
 
 const config = {
     name: "nekobin",
     aliases: ["nekocode"],
-    description: "Fetch the contents of a file and upload it to Nekobin.",
+    description: "Uploads the content of a file to Nekobin and returns the URL.",
     usage: "[file name]",
     cooldown: 5,
     permissions: [1, 2],
-    credits: "XaviaTeam & Coffee",
+    credits: "Coffee",
 };
 
-// Specify your directories
-const directories = [
-    "plugins/commands/🐢💨 | 𝙾𝚠𝚗𝚎𝚛",
-    "plugins/commands/🎧 | 𝙼𝚞𝚜𝚒𝚌",
-    "plugins/commands/👥 | 𝙼𝚎𝚖𝚋𝚎𝚛𝚜",
-    "plugins/commands/📖 | 𝙴𝚍𝚞𝚌𝚊𝚝𝚒𝚘𝚗",
-    "plugins/commands/🖼 | 𝙸𝚖𝚊𝚐𝚎"
-];
+const commandRootDir = path.resolve('./plugins/commands'); // The root directory for commands
 
-async function onCall({ message, args, event }) {
+async function onCall({ message, args }) {
+    const userId = message.senderID;
+
+    if (!args.length) {
+        return await message.reply("✖️ Please provide a file name to upload.");
+    }
+
     const fileName = args.join(" ");
-    if (!fileName) {
-        return message.send("✖️ Please provide a file name.");
+    const filePath = path.join(commandRootDir, fileName);
+
+    // Check if the file exists in the command directory
+    if (!fs.existsSync(filePath)) {
+        return await message.reply(`⚠️ The file "${fileName}" does not exist in the command directory.`);
     }
 
-    let fileContent;
-
-    // Search for the file in the specified directories
-    for (const dir of directories) {
-        try {
-            const filePath = path.resolve(`${dir}/${fileName}.js`);
-            fileContent = fs.readFileSync(filePath, "utf8");
-            break;
-        } catch (error) {
-            // Continue to next directory if file is not found
-        }
-    }
-
-    if (!fileContent) {
-        return message.send("✖️ File not found in any category!");
-    }
-
-    // If file content is found, upload to Nekobin
     try {
-        await message.react("🕰️");  // Show that the bot is processing
+        await message.react("🕰️");
+
+        // Read the file content
+        const fileContent = fs.readFileSync(filePath, 'utf-8');
+
         const stopTypingIndicator = global.api.sendTypingIndicator(message.threadID);
-        const response = await samirapi.nekobin(fileContent);  // Upload file content to Nekobin
+
+        // Upload content to Nekobin
+        const response = await samirapi.nekobin(fileContent);
 
         stopTypingIndicator();
 
-        // Check if the upload was successful and return the URL
+        // Check if response contains the URL
         if (response && response.success && response.url) {
             const nekobinUrl = response.url;
             console.log("Nekobin URL: ", nekobinUrl);
 
-            // Send the Nekobin URL to the chat
-            await message.send(`📝 Code uploaded: ${nekobinUrl}`);
+            // Send the Nekobin URL back to the user
+            await message.send(`📝 File content uploaded: ${nekobinUrl}`);
             await message.react("✔️");
         } else {
-            await message.send("⚠️ Failed to upload to Nekobin.");
+            await message.send("⚠️ No valid URL received from Nekobin.");
         }
     } catch (error) {
         console.error("Nekobin upload failed: ", error);
@@ -72,5 +62,5 @@ async function onCall({ message, args, event }) {
 
 export default {
     config,
-    onCall
+    onCall,
 };
