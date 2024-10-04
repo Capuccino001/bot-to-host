@@ -1,6 +1,5 @@
 import axios from 'axios';
 import fs from 'fs';
-import { PasteClient } from 'pastebin-api';
 import path from 'path';
 
 const config = {
@@ -13,12 +12,31 @@ const config = {
     credits: "Coffee",
 };
 
+const PASTEBIN_API_KEY = 'N5NL5MiwHU6EbQxsGtqy7iaodOcHithV'; // Pastebin API key
+
+async function createPaste(code, name) {
+    try {
+        const response = await axios.post('https://pastebin.com/api/api_post.php', null, {
+            params: {
+                api_dev_key: PASTEBIN_API_KEY,
+                api_option: 'paste',
+                api_paste_code: code,
+                api_paste_name: name,
+                api_paste_expire_date: 'N',
+                api_paste_format: 'javascript',
+                api_paste_private: 1 // 0 = public, 1 = unlisted, 2 = private
+            }
+        });
+        return response.data;
+    } catch (error) {
+        throw new Error("Failed to create Pastebin paste.");
+    }
+}
+
 async function onCall({ message, args }) {
     const { senderID, threadID, messageID, messageReply, type } = message;
     const text = messageReply ? messageReply.body : null;
 
-    const client = new PasteClient("N5NL5MiwHU6EbQxsGtqy7iaodOcHithV");
-    
     // Handle uploading local file to Pastebin
     if (!text && args[0]) {
         const fileName = args[0];
@@ -27,16 +45,13 @@ async function onCall({ message, args }) {
         fs.readFile(filePath, "utf-8", async (err, data) => {
             if (err) return message.reply(`File ${fileName}.js does not exist.`, threadID, messageID);
 
-            const url = await client.createPaste({
-                code: data,
-                expireDate: 'N',
-                format: "javascript",
-                name: fileName,
-                publicity: 1
-            });
-
-            const rawLink = url.replace('/pastebin.com/', '/pastebin.com/raw/');
-            return message.reply(rawLink, threadID, messageID);
+            try {
+                const pasteUrl = await createPaste(data, fileName);
+                const rawLink = pasteUrl.replace('/pastebin.com/', '/pastebin.com/raw/');
+                return message.reply(rawLink, threadID, messageID);
+            } catch (error) {
+                return message.reply("Error uploading to Pastebin.");
+            }
         });
         return;
     }
@@ -46,7 +61,7 @@ async function onCall({ message, args }) {
     if (text && urlR.test(text)) {
         const pastebinUrl = text.match(urlR)[0];
         
-        axios.get(pastebinUrl).then(async (response) => {
+        axios.get(`${pastebinUrl}/raw`).then(async (response) => {
             const data = response.data;
             const fileName = args[0] || 'newFile';
 
