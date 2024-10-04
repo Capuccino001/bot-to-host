@@ -3,9 +3,9 @@ import path from "path";
 import samirapi from 'samirapi';
 
 const config = {
-    name: "nekobin",
-    aliases: ["nekocode"],
-    description: "Fetch the contents of a command file from the commands directory and upload it to Nekobin.",
+    name: "paste",
+    aliases: ["pastecode"],
+    description: "Fetch the contents of a command file from the commands directory and upload it to Paste service.",
     usage: "[file name]",
     cooldown: 5,
     permissions: [1, 2],
@@ -55,23 +55,23 @@ async function onCall({ message, args }) {
         return await message.send(`⚠️ Failed to read the file content: ${error.message}`);
     }
 
-    // Upload file content to Nekobin
+    // Upload file content to the paste service
     try {
         await message.react("🕰️");  // Indicate that the bot is processing
         const stopTypingIndicator = global.api.sendTypingIndicator(message.threadID);
-        const response = await samirapi.nekobin(fileContent);  // Upload the content to Nekobin
+        const response = await samirapi.paste(fileContent);  // Upload the content to the paste service
 
         stopTypingIndicator();
 
-        // Check if the response has a success flag and URL
-        if (response && response.success && response.url) {
-            const nekobinUrl = response.url;
+        // Check if the response has a URL
+        if (response && response.url) {
+            const pasteUrl = response.url;
 
-            // Send the Nekobin URL back to the user
-            await message.send(`📝 Code uploaded: ${nekobinUrl}`);
+            // Send the Paste URL back to the user
+            await message.send(`📝 Code uploaded: ${pasteUrl}`);
             await message.react("✔️");
         } else {
-            await message.send(`⚠️ Failed to upload to Nekobin. Response: ${JSON.stringify(response)}`);
+            await message.send(`⚠️ Failed to upload to Paste. Response: ${JSON.stringify(response)}`);
         }
     } catch (error) {
         // Send the actual error message to the chat
