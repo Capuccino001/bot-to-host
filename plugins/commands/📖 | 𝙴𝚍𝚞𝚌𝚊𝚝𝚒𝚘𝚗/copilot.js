@@ -1,6 +1,6 @@
 const config = {
     name: "copilot",
-    aliases: ["deku"],
+    aliases: ["copilot"],
     description: "Fetch a response from Deku API.",
     usage: "[prompt]",
     cooldown: 3,
