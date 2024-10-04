@@ -4,7 +4,7 @@ const config = {
     description: "Fetch a response from Deku API.",
     usage: "[prompt]",
     cooldown: 3,
-    permissions: [1, 2],
+    permissions: [0],
     credits: "Coffee",
 };
 
