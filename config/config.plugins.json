@@ -33,5 +33,8 @@
   },
   "pinterest": {
     "searchType": "images"
+  },
+  "gmage": {
+    "searchType": "images"
   }
 }
