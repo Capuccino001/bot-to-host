@@ -58,8 +58,8 @@ async function onCall({ message, args }) {
 
         stopTypingIndicator();
 
-        // Check if response contains the URL
-        if (response && response.success && response.url) {
+        // Check if response contains a valid URL
+        if (response?.success && response?.url) {
             const nekobinUrl = response.url;
             console.log("Nekobin URL: ", nekobinUrl);
 
