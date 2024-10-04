@@ -1,44 +1,46 @@
 const config = {
     name: "copilot",
-    aliases: ["copilot", "assistant"],
-    description: "Interact with Bing Copilot Ai",
-    usage: "[message]",
+    aliases: ["deku"],
+    description: "Fetch a response from Deku API.",
+    usage: "[prompt]",
     cooldown: 3,
-    permissions: [0],
+    permissions: [1, 2],
     credits: "Coffee",
 };
 
 async function onCall({ message, args }) {
-    const userMessage = args.join(" ");
+    const userPrompt = args.join(" ");
 
-    const header = "🌊✨ | 𝙲𝚘𝚙𝚒𝚕𝚘𝚝\n━━━━━━━━━━━━━━━━";
-    const footer = "━━━━━━━━━━━━━━━━";
+    // Header message
+    const header = "✧₊⁺ | 𝙲𝚘𝚙𝚒𝚕𝚘𝚝\n・──────────────・";
+    const footer = "・───── >ᴗ< ──────・";
 
-    if (!userMessage) return message.reply(`${header}\n⚠️ Please provide a question.\n${footer}`);
+    if (!userPrompt) {
+        return message.reply(`${header}\nPlease provide a question.\n${footer}`);
+    }
 
     await message.react("🕰️"); // Indicate processing
 
-    const apiUrl = `https://www.samirxpikachu.run.place/bing?message=${encodeURIComponent(userMessage)}&mode=1&uid=23`;
+    const apiUrl = `https://deku-rest-api.gleeze.com/api/copilot?prompt=${encodeURIComponent(userPrompt)}&uid=2`;
 
     try {
         const response = await fetch(apiUrl);
 
-        if (!response.ok) throw new Error("⚠️ Failed to fetch data");
+        if (!response.ok) throw new Error("Failed to fetch data");
 
-        let result = await response.text(); // API response is plain text
+        const data = await response.json();
 
-        // Format the fetched response for better readability
-        result = result
-            .replace(/\\n/g, '\n') // Replace newline characters with actual new lines
-            .replace(/\n{2,}/g, '\n\n') // Ensure double new lines between paragraphs
-            .trim(); // Remove any unnecessary leading or trailing whitespace
+        if (!data.status) {
+            return message.reply(`${header}\nAn error occurred while fetching the data.\n${footer}`);
+        }
 
-        await message.reply(`${header}\n${result}\n${footer}`); // Send back the result with header and footer
+        const result = data.result || "Sorry, I couldn't find a result.";
+        await message.reply(`${header}\n${result}\n${footer}`); // Send back the result
         await message.react("✔️"); // React with ✅ on success
     } catch (error) {
         console.error(error);
         await message.react("✖️"); // React with ❎ on error
-        await message.reply(`${header}\n⚠️ An error occurred while fetching the data.\n${footer}`); // Error message with header and footer
+        await message.reply(`${header}\nAn error occurred while fetching the data.\n${footer}`); // Error message
     }
 }
 
