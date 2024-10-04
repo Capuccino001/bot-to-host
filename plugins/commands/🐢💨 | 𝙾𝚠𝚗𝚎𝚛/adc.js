@@ -12,8 +12,14 @@ const config = {
     credits: "Coffee",
 };
 
-// Root directory for commands
-const commandRootDir = path.resolve('./plugins/commands');
+// Directories to search for commands
+const directories = [
+    "plugins/commands/🐢💨 | 𝙾𝚠𝚗𝚎𝚛",
+    "plugins/commands/🎧 | 𝙼𝚞𝚜𝚒𝚌",
+    "plugins/commands/👥 | 𝙼𝚎𝚖𝚋𝚎𝚛𝚜",
+    "plugins/commands/📖 | 𝙴𝚍𝚞𝚌𝚊𝚝𝚒𝚘𝚗",
+    "plugins/commands/🖼 | 𝙸𝚖𝚊𝚐𝚎"
+]; // Modify these paths based on your directory structure
 
 const PASTEBIN_API_KEY = 'N5NL5MiwHU6EbQxsGtqy7iaodOcHithV'; // Pastebin API key
 
@@ -36,6 +42,17 @@ async function createPaste(code, name) {
     }
 }
 
+// Function to search for the file in the directories
+function findCommandFile(fileName) {
+    for (const dir of directories) {
+        const filePath = path.resolve(dir, `${fileName}.js`);
+        if (fs.existsSync(filePath)) {
+            return filePath; // Return the path if the file exists
+        }
+    }
+    return null; // Return null if the file isn't found
+}
+
 async function onCall({ message, args }) {
     const { senderID, threadID, messageID, messageReply, type } = message;
     const text = messageReply ? messageReply.body : null;
@@ -43,10 +60,14 @@ async function onCall({ message, args }) {
     // Handle uploading local file to Pastebin
     if (!text && args[0]) {
         const fileName = args[0];
-        const filePath = path.resolve(commandRootDir, `${fileName}.js`);
-        
+        const filePath = findCommandFile(fileName);
+
+        if (!filePath) {
+            return message.reply(`File ${fileName}.js does not exist in any directory.`, threadID, messageID);
+        }
+
         fs.readFile(filePath, "utf-8", async (err, data) => {
-            if (err) return message.reply(`File ${fileName}.js does not exist.`, threadID, messageID);
+            if (err) return message.reply(`Error reading ${fileName}.js.`, threadID, messageID);
 
             try {
                 const pasteUrl = await createPaste(data, fileName);
@@ -63,15 +84,17 @@ async function onCall({ message, args }) {
     const urlR = /https?:\/\/pastebin\.com\/([a-zA-Z0-9]+)/;
     if (text && urlR.test(text)) {
         const pastebinUrl = text.match(urlR)[0];
-        
+
         axios.get(`${pastebinUrl}/raw`).then(async (response) => {
             const data = response.data;
             const fileName = args[0] || 'newFile';
 
-            fs.writeFile(path.resolve(commandRootDir, `${fileName}.js`), data, "utf-8", (err) => {
-                if (err) return message.reply(`An error occurred while saving ${fileName}.js`, threadID, messageID);
+            const filePath = path.resolve(directories[0], `${fileName}.js`); // Default to the first directory for saving
+
+            fs.writeFile(filePath, data, "utf-8", (err) => {
+                if (err) return message.reply(`Error saving ${fileName}.js`, threadID, messageID);
                 
-                message.reply(`Saved code as ${fileName}.js`, threadID, messageID);
+                message.reply(`Saved code as ${fileName}.js in ${directories[0]}`, threadID, messageID); // Mention where it's saved
             });
         }).catch((err) => {
             message.reply("Error fetching from Pastebin. Make sure the link is correct.");
