@@ -28,7 +28,7 @@ async function onCall({ message }) {
     }
 
     const attachment = reply.attachments[0];
-    
+
     if (attachment.type !== "photo") {
         return message.reply("❌ This is not a photo.");
     }
@@ -55,9 +55,9 @@ async function onCall({ message }) {
     }
 }
 
-// Function to fetch the enhanced image from the API
+// Function to fetch the enhanced image from the new API
 async function fetchEnhancedImage(imageUrl) {
-    const response = await axios.get(`https://4k-ayoub.vercel.app/upscale?url=${encodeURIComponent(imageUrl)}`, {
+    const response = await axios.get(`https://www.samirxpikachu.run.place/enhanced?url=${encodeURIComponent(imageUrl)}`, {
         responseType: 'arraybuffer'
     });
 
