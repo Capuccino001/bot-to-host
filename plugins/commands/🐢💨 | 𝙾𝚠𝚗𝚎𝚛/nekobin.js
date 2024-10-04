@@ -22,17 +22,20 @@ async function onCall({ message, args }) {
     try {
         await message.react("🕰️");
         const stopTypingIndicator = global.api.sendTypingIndicator(message.threadID);
-        const nekobinUrl = await samirapi.nekobin(code);
+        const response = await samirapi.nekobin(code); // Nekobin API call
 
         stopTypingIndicator();
 
-        console.log("Nekobin URL: ", nekobinUrl);
+        // Check if response has a success flag and URL
+        if (response && response.success && response.url) {
+            const nekobinUrl = response.url;
+            console.log("Nekobin URL: ", nekobinUrl);
 
-        if (nekobinUrl) {
+            // Send the Nekobin URL back to the user
             await message.send(`📝 Code uploaded: ${nekobinUrl}`);
             await message.react("✔️");
         } else {
-            await message.send("⚠️ No response received from Nekobin.");
+            await message.send("⚠️ No valid URL received from Nekobin.");
         }
     } catch (error) {
         console.error("Nekobin upload failed: ", error);
