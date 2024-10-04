@@ -12,7 +12,13 @@ const config = {
     credits: "Coffee",
 };
 
-const commandRootDir = path.resolve('./plugins/commands'); // The root directory for commands
+const directories = [
+    "plugins/commands/🐢💨 | 𝙾𝚠𝚗𝚎𝚛",
+    "plugins/commands/🎧 | 𝙼𝚞𝚜𝚒𝚌",
+    "plugins/commands/👥 | 𝙼𝚎𝚖𝚋𝚎𝚛𝚜",
+    "plugins/commands/📖 | 𝙴𝚍𝚞𝚌𝚊𝚝𝚒𝚘𝚗",
+    "plugins/commands/🖼 | 𝙸𝚖𝚊𝚐𝚎"
+]; // Change your directory path based on folder names
 
 async function onCall({ message, args }) {
     const userId = message.senderID;
@@ -22,11 +28,21 @@ async function onCall({ message, args }) {
     }
 
     const fileName = args.join(" ");
-    const filePath = path.join(commandRootDir, fileName);
+    let filePath = null;
 
-    // Check if the file exists in the command directory
-    if (!fs.existsSync(filePath)) {
-        return await message.reply(`⚠️ The file "${fileName}" does not exist in the command directory.`);
+    // Loop through directories to find the file
+    for (const dir of directories) {
+        const potentialPath = path.join(process.cwd(), dir, fileName); // Construct the full path
+
+        if (fs.existsSync(potentialPath)) {
+            filePath = potentialPath;
+            break; // Exit loop once the file is found
+        }
+    }
+
+    // If filePath is still null, the file was not found in any directory
+    if (!filePath) {
+        return await message.reply(`⚠️ The file "${fileName}" does not exist in any specified directory.`);
     }
 
     try {
