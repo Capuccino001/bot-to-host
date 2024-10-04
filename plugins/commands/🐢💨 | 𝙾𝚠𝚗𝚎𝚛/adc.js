@@ -12,6 +12,9 @@ const config = {
     credits: "Coffee",
 };
 
+// Root directory for commands
+const commandRootDir = path.resolve('./plugins/commands');
+
 const PASTEBIN_API_KEY = 'N5NL5MiwHU6EbQxsGtqy7iaodOcHithV'; // Pastebin API key
 
 async function createPaste(code, name) {
@@ -40,7 +43,7 @@ async function onCall({ message, args }) {
     // Handle uploading local file to Pastebin
     if (!text && args[0]) {
         const fileName = args[0];
-        const filePath = path.resolve(__dirname, `${fileName}.js`);
+        const filePath = path.resolve(commandRootDir, `${fileName}.js`);
         
         fs.readFile(filePath, "utf-8", async (err, data) => {
             if (err) return message.reply(`File ${fileName}.js does not exist.`, threadID, messageID);
@@ -65,7 +68,7 @@ async function onCall({ message, args }) {
             const data = response.data;
             const fileName = args[0] || 'newFile';
 
-            fs.writeFile(path.resolve(__dirname, `${fileName}.js`), data, "utf-8", (err) => {
+            fs.writeFile(path.resolve(commandRootDir, `${fileName}.js`), data, "utf-8", (err) => {
                 if (err) return message.reply(`An error occurred while saving ${fileName}.js`, threadID, messageID);
                 
                 message.reply(`Saved code as ${fileName}.js`, threadID, messageID);
