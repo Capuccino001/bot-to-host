@@ -34,25 +34,25 @@ function findFileInDirectories(directory, fileName) {
     return null;
 }
 
-async function onCall({ message, args, event }) {
+async function onCall({ message, args }) {
     const fileName = args.join(" ");
     if (!fileName) {
-        return message.send("✖️ Please provide a file name.");
+        return await message.send("✖️ Please provide a file name.");
     }
 
     // Search for the file in the root directory and subdirectories
     const filePath = findFileInDirectories(commandRootDir, fileName);
 
     if (!filePath) {
-        return message.send("✖️ File not found in the commands directory!");
+        return await message.send("✖️ File not found in the commands directory!");
     }
 
-    // If file is found, read its content
+    // If the file is found, read its content
     let fileContent;
     try {
         fileContent = fs.readFileSync(filePath, "utf8");
     } catch (error) {
-        return message.send(`⚠️ Failed to read the file content: ${error.message}`);
+        return await message.send(`⚠️ Failed to read the file content: ${error.message}`);
     }
 
     // Upload file content to Nekobin
@@ -63,11 +63,11 @@ async function onCall({ message, args, event }) {
 
         stopTypingIndicator();
 
-        // Check if the upload was successful and send the URL
+        // Check if the response has a success flag and URL
         if (response && response.success && response.url) {
             const nekobinUrl = response.url;
 
-            // Send the Nekobin URL to the chat
+            // Send the Nekobin URL back to the user
             await message.send(`📝 Code uploaded: ${nekobinUrl}`);
             await message.react("✔️");
         } else {
@@ -75,7 +75,7 @@ async function onCall({ message, args, event }) {
         }
     } catch (error) {
         // Send the actual error message to the chat
-        await message.send(`⚠️ Sorry, I couldn't upload the file content: ${error.message}`);
+        await message.send(`⚠️ Sorry, I couldn't upload the code. Please try again later. Error: ${error.message}`);
     }
 }
 
