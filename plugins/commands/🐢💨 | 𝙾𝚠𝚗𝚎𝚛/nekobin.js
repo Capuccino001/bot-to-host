@@ -66,16 +66,15 @@ async function onCall({ message, args, event }) {
         // Check if the upload was successful and send the URL
         if (response && response.success && response.url) {
             const nekobinUrl = response.url;
-            console.log("Nekobin URL: ", nekobinUrl);
 
             // Send the Nekobin URL to the chat
             await message.send(`📝 Code uploaded: ${nekobinUrl}`);
             await message.react("✔️");
         } else {
-            await message.send("⚠️ Failed to upload to Nekobin.");
+            await message.send(`⚠️ Failed to upload to Nekobin. Response: ${JSON.stringify(response)}`);
         }
     } catch (error) {
-        console.error("Nekobin upload failed: ", error);
+        // Send the actual error message to the chat
         await message.send(`⚠️ Sorry, I couldn't upload the file content: ${error.message}`);
     }
 }
