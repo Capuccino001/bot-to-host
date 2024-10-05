@@ -15,17 +15,14 @@ const config = {
 
 async function onCall({ message, args, event, api }) {
     let imageUrl;
-    let type;
 
     // Check if the message is a reply and has an attachment (image or sticker)
     if (event.type === "message_reply" && event.messageReply?.attachments?.[0]?.type) {
         if (["photo", "sticker"].includes(event.messageReply.attachments[0].type)) {
             imageUrl = event.messageReply.attachments[0].url;
-            type = isNaN(args[0]) ? 1 : Number(args[0]);
         }
     } else if (args[0]?.match(/(https?:\/\/.*\.(?:png|jpg|jpeg))/g)) {
         imageUrl = args[0];
-        type = isNaN(args[1]) ? 1 : Number(args[1]);
     } else {
         return await message.reply("✖️ Please provide an image URL or reply to an image.");
     }
@@ -60,7 +57,7 @@ async function onCall({ message, args, event, api }) {
     } catch (error) {
         console.error("RemoveBG API call failed: ", error);
         await message.reply("⚠️ Something went wrong. Please try again later. The issue has been reported.");
-        
+
         // Notify admin of the error
         const errorMessage = `
             ----RemoveBG Log----
