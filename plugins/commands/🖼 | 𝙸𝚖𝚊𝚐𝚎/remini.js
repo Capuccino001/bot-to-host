@@ -1,74 +1,62 @@
+import { writeFileSync, existsSync, mkdirSync, createReadStream } from 'fs';
+import { join } from 'path';
 import axios from 'axios';
-import fs from 'fs-extra';
-import path from 'path';
 import { fileURLToPath } from 'url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const cachePath = path.join(__dirname, './plugins/commands/cache');
-
-const config = {
-    name: 'remini',
-    version: '1.0.0',
-    permissions: [0],
-    credits: 'Cache',
-    description: 'Enhance the image',
-    commandCategory: 'Images',
-    usages: 'Reply to the image',
-    category: "𝙸𝚖𝚊𝚐𝚎",
-    cooldown: 5,
-    dependencies: {}
-};
-
-// Function to enhance the image
-async function onCall({ message }) {
-    const reply = message.messageReply;
-
-    if (!reply || !reply.attachments || reply.attachments.length === 0) {
-        return message.reply("📷 Please reply to the image to enhance it.");
-    }
-
-    const attachment = reply.attachments[0];
-
-    if (attachment.type !== "photo") {
-        return message.reply("❌ This is not a photo.");
-    }
-
-    try {
-        const imageUrl = attachment.url;
-        const enhancedImage = await fetchEnhancedImage(imageUrl);
-
-        // Ensure the cache directory exists
-        await fs.ensureDir(cachePath);
-
-        // Save the image to the cache directory
-        const filePath = path.join(cachePath, '4k.png');
-        await fs.outputFile(filePath, enhancedImage);
-
-        // Send the enhanced image as a reply
-        await message.reply({
-            body: "✨ The image has been successfully enhanced.",
-            attachment: fs.createReadStream(filePath)
-        });
-    } catch (error) {
-        console.error(error);
-        return message.reply("⚠️ An error occurred while processing the image. Please try again later.");
-    }
-}
-
-// Function to fetch the enhanced image from the new API
-async function fetchEnhancedImage(imageUrl) {
-    const response = await axios.get(`https://www.samirxpikachu.run.place/enhanced?url=${encodeURIComponent(imageUrl)}`, {
-        responseType: 'arraybuffer'
-    });
-
-    if (response.status !== 200) {
-        throw new Error("Failed to fetch the enhanced image.");
-    }
-
-    return Buffer.from(response.data, 'binary');
-}
+const __dirname = join(fileURLToPath(import.meta.url), '..'); // Resolves __dirname for ES modules
 
 export default {
-    config,
-    onCall
+  config: {
+    name: "remini",
+    aliases: [],
+    version: "2.0",
+    author: "Vex_Kshitiz",
+    countDown: 20,
+    role: 0,
+    shortDescription: "remini",
+    longDescription: "enhance the image quality",
+    category: "tool",
+    guide: {
+      en: "{p}remini (reply to image)",
+    }
+  },
+
+  onStart: async function ({ message, event, api }) {
+    api.setMessageReaction("🕰️", event.messageID, (err) => {}, true);
+    const { type: messageType, messageReply } = event;
+    const { attachments, threadID, messageID } = messageReply || {};
+
+    if (messageType === "message_reply" && attachments) {
+      const [attachment] = attachments;
+      const { url: imageUrl, type: attachmentType } = attachment || {};
+
+      if (!attachment || !["photo", "sticker"].includes(attachmentType)) {
+        return message.reply("❌ | Reply must be an image.");
+      }
+
+      try {
+        const { data } = await axios.get(`https://vex-kshitiz.vercel.app/upscale?url=${encodeURIComponent(imageUrl)}`, {
+          responseType: "json"
+        });
+
+        const enhancedImageUrl = data.result_url;
+        const imageResponse = await axios.get(enhancedImageUrl, { responseType: "arraybuffer" });
+
+        const cacheDir = join(__dirname, "cache");
+        if (!existsSync(cacheDir)) {
+          mkdirSync(cacheDir, { recursive: true });
+        }
+
+        const imagePath = join(cacheDir, "remi_image.png");
+        writeFileSync(imagePath, imageResponse.data);
+
+        message.reply({ attachment: createReadStream(imagePath) }, threadID);
+      } catch (error) {
+        console.error(error);
+        message.reply("❌ | Error occurred while enhancing image.");
+      }
+    } else {
+      message.reply("❌ | Please reply to an image.");
+    }
+  }
 };
