@@ -41,7 +41,7 @@ async function createTempEmail(message) {
         if (!email) {
             throw new Error("Email not generated.");
         }
-        return message.send(`・───── >ᴗ< ──────・\n📩 Generated Email:\n${email}\n・──────────────・`);
+        return message.send(`・───── >ᴗ< ──────・\n📩 Generated Email:\n🔹${email}\n・──────────────・`);
     } catch (error) {
         console.error("❌ | Failed to generate email", error.message);
         return message.send(`❌ | Failed to generate email. Error: ${error.message}`);
@@ -56,7 +56,7 @@ async function checkInbox(message, email) {
         }
 
         const { date, from, subject } = inboxMessages[0]; // Get the most recent message
-        return message.send(`━━━━━━━━━━━━━━━━\n📬 Inbox messages for ${email}:\n📧 From: ${from}\n📩 Subject: ${subject}\n📅 Date: ${date}\n━━━━━━━━━━━━━━━━`);
+        return message.send(`━━━━━━━━━━━━━━━━\n📬 Inbox messages for ${email}:\n📧 From: ${from}\n📩 Subject: ${subject}\n━━━━━━━━━━━━━━━━`);
     } catch (error) {
         console.error("❌ | Failed to retrieve inbox messages", error.message);
         return message.send(`❌ | Failed to retrieve inbox messages. Error: ${error.message}`);
