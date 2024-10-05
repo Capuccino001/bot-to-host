@@ -21,7 +21,7 @@ const directories = [
     "plugins/commands/🖼 | 𝙸𝚖𝚊𝚐𝚎"
 ];
 
-const PASTEBIN_API_KEY = 'a62m-1-BrPVYSYJrzwjKXLDouqGw-Es-'; 
+const PASTEBIN_API_KEY = 'a62m1BrPVYSYJrzwjKXLDouqGwEs'; 
 // Make sure this API key is correct
 
 async function createPaste(code, name) {
