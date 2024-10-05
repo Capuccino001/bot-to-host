@@ -1,4 +1,4 @@
-import { writeFileSync, existsSync, mkdirSync, createReadStream } from 'fs';
+import { writeFileSync, existsSync, mkdirSync, createReadStream, unlinkSync } from 'fs';
 import { join } from 'path';
 import axios from 'axios';
 import { fileURLToPath } from 'url';
@@ -13,7 +13,7 @@ const config = {
     description: "Enhance the image quality",
     usage: "(reply to an image)",
     cooldown: 20,
-    permissions: [1, 2],
+    permissions: [0],
     credits: "Coffee",
 };
 
@@ -52,8 +52,15 @@ async function onCall({ message, api }) {
         const imagePath = join(cacheDir, "remi_image.png");
         writeFileSync(imagePath, imageResponse.data);
 
-        // Reply with the enhanced image
-        await message.reply({ attachment: createReadStream(imagePath) }, threadID);
+        // Send the enhanced image with a completion message
+        await message.send({
+            body: "✅ Image enhancement complete!",
+            attachment: createReadStream(imagePath)
+        }, threadID);
+
+        // Delete the temporary image file after sending
+        unlinkSync(imagePath);
+
         await message.react("✔️");
     } catch (error) {
         console.error("Error enhancing image: ", error);
