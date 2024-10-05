@@ -64,6 +64,9 @@ async function onCall({ message }) {
         // Delete the temporary image file after sending
         unlinkSync(filePath);
 
+        // Update the processing message to indicate completion
+        await message.send("✅ Background removal complete!"); // Change to message.send
+
     } catch (error) {
         console.error("RemoveBG API call failed: ", error);
         await message.reply("⚠️ Something went wrong. Please try again later.");
@@ -80,8 +83,8 @@ async function onCall({ message }) {
         }
     }
 
-    // Optionally inform the user that processing is complete without removing the message
-    await message.reply("✅ Background removal complete!");
+    // Optionally remove the processing message if needed
+    // await message.unsend(processingMessage.messageID); // If you decide to keep this line, remove the comment
 }
 
 export default {
