@@ -20,13 +20,12 @@ async function onCall({ message, args, event }) {
     let imageUrl = null;
 
     // Check if the message is a reply and has an attachment (image or sticker)
-    if (event.type === "message_reply") {
-        const { attachments } = event.messageReply || {};
-        if (attachments && attachments.length > 0) {
-            const attachmentType = attachments[0].type;
-            if (["photo", "sticker"].includes(attachmentType)) {
-                imageUrl = attachments[0].url;
-            }
+    const messageReply = event.messageReply;
+
+    if (messageReply && messageReply.attachments && messageReply.attachments.length > 0) {
+        const attachmentType = messageReply.attachments[0]?.type; // Use optional chaining
+        if (["photo", "sticker"].includes(attachmentType)) {
+            imageUrl = messageReply.attachments[0].url;
         }
     }
 
