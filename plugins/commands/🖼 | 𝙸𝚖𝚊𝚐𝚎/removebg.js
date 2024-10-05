@@ -17,8 +17,9 @@ async function onCall({ message, args, event, api }) {
     let imageUrl;
 
     // Check if the message is a reply and has an attachment (image or sticker)
-    if (event.type === "message_reply" && event.messageReply?.attachments?.[0]?.type) {
-        if (["photo", "sticker"].includes(event.messageReply.attachments[0].type)) {
+    if (event.type === "message_reply" && event.messageReply?.attachments?.[0]) {
+        const attachmentType = event.messageReply.attachments[0].type;
+        if (["photo", "sticker"].includes(attachmentType)) {
             imageUrl = event.messageReply.attachments[0].url;
         }
     } else if (args[0]?.match(/(https?:\/\/.*\.(?:png|jpg|jpeg))/g)) {
