@@ -30,11 +30,11 @@ async function onCall({ message, args }) {
             if (vision) {
                 return await message.send(`${header}\n${vision}\n${footer}`);
             } else {
-                return await message.send(`${header}\n🤖 Failed to recognize the image.\n${footer}`);
+                return await message.send(`${header}\nFailed to recognize the image.\n${footer}`);
             }
         } catch (error) {
             console.error("Error fetching image recognition:", error);
-            return await message.send(`${header}\n⚠️ An error occurred while processing the image.\n${footer}`);
+            return await message.send(`${header}\nAn error occurred while processing the image.\n${footer}`);
         }
     }
 
