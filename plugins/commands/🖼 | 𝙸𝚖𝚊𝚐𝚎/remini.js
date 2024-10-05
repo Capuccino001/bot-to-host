@@ -17,11 +17,11 @@ const config = {
     credits: "Coffee",
 };
 
-async function onCall({ message, event, api }) {
-    const { type: messageType, messageReply } = event;
+async function onCall({ message, api }) {
+    const { messageReply } = message; // Adjusted to get messageReply directly from the message
     const { attachments, threadID } = messageReply || {};
 
-    if (messageType !== "message_reply" || !attachments || !["photo", "sticker"].includes(attachments[0].type)) {
+    if (!attachments || !["photo", "sticker"].includes(attachments[0]?.type)) {
         return await message.reply("❌ | Please reply to an image.");
     }
 
