@@ -1,9 +1,9 @@
-import axios from "axios";
-import fs from "fs-extra";
-import { join } from "path";
-import { fileURLToPath } from "url";
+import { writeFileSync, existsSync, mkdirSync, createReadStream, unlinkSync } from 'fs';
+import { join } from 'path';
+import axios from 'axios';
+import { fileURLToPath } from 'url';
 
-const __dirname = join(fileURLToPath(import.meta.url), "..");
+const __dirname = join(fileURLToPath(import.meta.url), '..');
 const apiKey = "hgEG2LSoC8VD5A2akNvcFySR";
 
 const config = {
@@ -16,29 +16,18 @@ const config = {
     credits: "Strawhat Luffy & kshitiz",
 };
 
-async function onCall({ message, args, event }) {
-    let imageUrl = null;
+async function onCall({ message, api }) {
+    const { messageReply } = message; // Get messageReply directly from the message
+    const { attachments, threadID } = messageReply || {};
+    
+    let imageUrl;
 
-    // Check if the message is a reply and has an attachment (image or sticker)
-    const messageReply = event.messageReply;
-
-    if (messageReply && messageReply.attachments && messageReply.attachments.length > 0) {
-        const attachmentType = messageReply.attachments[0]?.type; // Use optional chaining
-        if (["photo", "sticker"].includes(attachmentType)) {
-            imageUrl = messageReply.attachments[0].url;
-        }
-    }
-
-    // If no image URL found in reply, check for URL in arguments
-    if (!imageUrl && args[0]?.match(/(https?:\/\/.*\.(?:png|jpg|jpeg))/g)) {
-        imageUrl = args[0];
-    }
-
-    // Log image URL for debugging
-    console.log("Image URL: ", imageUrl);
-
-    // Handle case where imageUrl is still null
-    if (!imageUrl) {
+    // Check if the message is a reply with attachments
+    if (attachments && ["photo", "sticker"].includes(attachments[0]?.type)) {
+        imageUrl = attachments[0].url;
+    } else if (message.args[0]?.match(/(https?:\/\/.*\.(?:png|jpg|jpeg))/g)) {
+        imageUrl = message.args[0];
+    } else {
         return await message.reply("✖️ Please provide an image URL or reply to an image.");
     }
 
@@ -59,19 +48,21 @@ async function onCall({ message, args, event }) {
         );
 
         const outputBuffer = Buffer.from(response.data, "binary");
-        const fileName = `${Date.now()}.png`;
-        const filePath = join(__dirname, "cache", fileName); // Use cache directory
+        const cacheDir = join(__dirname, "cache");
 
         // Ensure cache directory exists
-        await fs.ensureDir(join(__dirname, "cache"));
+        if (!existsSync(cacheDir)) {
+            mkdirSync(cacheDir, { recursive: true });
+        }
 
-        await fs.writeFile(filePath, outputBuffer);
+        const filePath = join(cacheDir, `${Date.now()}.png`);
+        writeFileSync(filePath, outputBuffer);
 
-        // Send the image as an attachment
-        await message.reply({ attachment: fs.createReadStream(filePath) });
+        // Reply with the image as an attachment
+        await message.reply({ attachment: createReadStream(filePath) }, threadID);
 
         // Delete the temporary image file after sending
-        await fs.unlink(filePath);
+        unlinkSync(filePath);
 
     } catch (error) {
         console.error("RemoveBG API call failed: ", error);
