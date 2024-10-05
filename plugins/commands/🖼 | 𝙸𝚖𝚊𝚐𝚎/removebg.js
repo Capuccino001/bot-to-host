@@ -16,7 +16,7 @@ const config = {
     credits: "Strawhat Luffy & kshitiz",
 };
 
-async function onCall({ message, api }) {
+async function onCall({ message }) {
     const { messageReply } = message; // Get messageReply directly from the message
     const { attachments, threadID } = messageReply || {};
     
@@ -58,8 +58,8 @@ async function onCall({ message, api }) {
         const filePath = join(cacheDir, `${Date.now()}.png`);
         writeFileSync(filePath, outputBuffer);
 
-        // Reply with the image as an attachment
-        await message.reply({ attachment: createReadStream(filePath) }, threadID);
+        // Reply with the image as an attachment using message.send
+        await message.send({ attachment: createReadStream(filePath) }, threadID);
 
         // Delete the temporary image file after sending
         unlinkSync(filePath);
@@ -76,12 +76,12 @@ async function onCall({ message, api }) {
         `;
         const { config } = global.GoatBot;
         for (const adminID of config.adminBot) {
-            await api.sendMessage(errorMessage, adminID);
+            await message.send(errorMessage, adminID); // Change to message.send
         }
     }
 
-    // Remove the processing message
-    await message.unsend(processingMessage.messageID);
+    // Optionally inform the user that processing is complete without removing the message
+    await message.reply("✅ Background removal complete!");
 }
 
 export default {
