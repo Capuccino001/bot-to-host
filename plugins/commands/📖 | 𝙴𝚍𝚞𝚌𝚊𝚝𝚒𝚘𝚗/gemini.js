@@ -12,9 +12,9 @@ const config = {
 
 const previousResponses = new Map(); // Store previous responses for each user
 
-async function onCall({ message, args }) {
+async function onCall({ message, args, event }) {
     const userQuery = args.join(" ");
-    const userId = message.senderID; // Get user ID
+    const userId = event.senderID; // Get user ID
 
     // Handle case where no query is provided
     if (!userQuery) {
@@ -28,6 +28,23 @@ async function onCall({ message, args }) {
     await message.react("🕰️"); // Indicate processing
 
     try {
+        // Check for image attachments in the original message
+        if (event.messageReply && event.messageReply.attachments && event.messageReply.attachments[0]?.type === "photo") {
+            const attachment = event.messageReply.attachments[0];
+            const imageURL = attachment.url;
+
+            const geminiUrl = `https://joncll.serv00.net/chat.php?ask=${encodeURIComponent(query)}&imgurl=${encodeURIComponent(imageURL)}`;
+            const geminiResponse = await axios.get(geminiUrl);
+            const { vision } = geminiResponse.data;
+
+            if (vision) {
+                return message.reply(`ᯓ★ | 𝙶𝚎𝚖𝚒𝚗𝚒\n・──────────────・\n${vision}\n・───── >ᴗ< ──────・`);
+            } else {
+                return message.reply("🤖 Failed to recognize the image.");
+            }
+        }
+
+        // Use the Google Gemini API for text queries
         const { data } = await axios.get(`https://deku-rest-api.gleeze.com/gemini`, {
             params: {
                 prompt: query
@@ -45,7 +62,7 @@ async function onCall({ message, args }) {
     } catch (error) {
         console.error("API call failed:", error);
         await message.react("✖️"); // React with ✖️ on error
-        await message.reply("An error occurred while fetching the data."); // Error message
+        await message.reply("⚠️ An error occurred while fetching the data."); // Error message
     }
 }
 
