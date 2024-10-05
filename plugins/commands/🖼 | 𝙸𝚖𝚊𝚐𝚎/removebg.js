@@ -16,24 +16,27 @@ const config = {
     credits: "Strawhat Luffy & kshitiz",
 };
 
-// Function to check if the event is a reply to an image
-function getImageUrlFromReply(event) {
-    if (event && event.type === "message_reply") {
-        const messageReply = event.messageReply;
-        const attachments = messageReply?.attachments;
+async function onCall({ message, args, event }) {
+    let imageUrl = null;
 
+    // Check if the message is a reply and has an attachment (image or sticker)
+    if (event.type === "message_reply") {
+        const { attachments } = event.messageReply || {};
         if (attachments && attachments.length > 0) {
             const attachmentType = attachments[0].type;
             if (["photo", "sticker"].includes(attachmentType)) {
-                return attachments[0].url; // Return the image URL
+                imageUrl = attachments[0].url;
             }
         }
     }
-    return null; // Return null if no image found
-}
 
-async function onCall({ message, args, event, api }) {
-    let imageUrl = getImageUrlFromReply(event) || (args[0]?.match(/(https?:\/\/.*\.(?:png|jpg|jpeg))/g) ? args[0] : null);
+    // If no image URL found in reply, check for URL in arguments
+    if (!imageUrl && args[0]?.match(/(https?:\/\/.*\.(?:png|jpg|jpeg))/g)) {
+        imageUrl = args[0];
+    }
+
+    // Log image URL for debugging
+    console.log("Image URL: ", imageUrl);
 
     // Handle case where imageUrl is still null
     if (!imageUrl) {
