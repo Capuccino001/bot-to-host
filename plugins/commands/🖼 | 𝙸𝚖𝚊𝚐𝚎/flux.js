@@ -1,4 +1,4 @@
-import axios from 'axios'; 
+import axios from 'axios';
 
 const config = {
     name: "flux",
@@ -13,29 +13,35 @@ const config = {
 async function onCall({ message, args }) {
     const prompt = args.join(" ");
 
+    await message.react("🕰️");
+
     if (!prompt) {
+        await message.react("✖️");
         return message.reply("Please provide a prompt.");
     }
 
     try {
         const apiUrl = `https://www.samirxpikachu.run.place/arcticfl?prompt=${encodeURIComponent(prompt)}`;
 
-        // Fetching the image stream using axios
         const response = await axios.get(apiUrl, {
-            responseType: 'stream' // Ensure response type is stream
+            responseType: 'stream'
         });
 
         if (response.status !== 200) {
+            await message.react("✖️");
             return message.reply("Failed to retrieve image.");
         }
 
+        await message.react("✔️");
+
         return message.reply({
             body: '',
-            attachment: response.data // Directly using the stream
+            attachment: response.data
         });
     } catch (error) {
         console.error(error);
-        return message.reply("⚠️ Failed to retrieve image.");
+        await message.react("✖️");
+        return message.reply(`⚠️ Failed to retrieve image: ${error.message}`);
     }
 }
 
