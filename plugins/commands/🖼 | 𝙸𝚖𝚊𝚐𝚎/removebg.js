@@ -13,7 +13,7 @@ const config = {
     usage: "reply to an image or add an image URL",
     cooldown: 20,
     permissions: [0],
-    credits: "Strawhat Luffy & kshitiz",
+    credits: "coffee",
 };
 
 async function onCall({ message }) {
