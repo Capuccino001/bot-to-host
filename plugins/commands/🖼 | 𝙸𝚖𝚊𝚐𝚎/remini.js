@@ -18,7 +18,7 @@ const config = {
 };
 
 async function onCall({ message, api }) {
-    const { messageReply } = message; // Adjusted to get messageReply directly from the message
+    const { messageReply } = message; // Get messageReply directly from the message
     const { attachments, threadID } = messageReply || {};
 
     if (!attachments || !["photo", "sticker"].includes(attachments[0]?.type)) {
@@ -29,7 +29,6 @@ async function onCall({ message, api }) {
 
     try {
         await message.react("🕰️");
-        const stopTypingIndicator = api.sendTypingIndicator(threadID);
 
         // Make API request to enhance image
         const { data } = await axios.get(`https://vex-kshitiz.vercel.app/upscale?url=${encodeURIComponent(imageUrl)}`, {
@@ -52,8 +51,6 @@ async function onCall({ message, api }) {
 
         const imagePath = join(cacheDir, "remi_image.png");
         writeFileSync(imagePath, imageResponse.data);
-
-        stopTypingIndicator();
 
         // Reply with the enhanced image
         await message.reply({ attachment: createReadStream(imagePath) }, threadID);
