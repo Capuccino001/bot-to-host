@@ -16,18 +16,27 @@ const config = {
     credits: "Strawhat Luffy & kshitiz",
 };
 
-async function onCall({ message, args, event, api }) {
-    let imageUrl;
+// Function to check if the event is a reply to an image
+function getImageUrlFromReply(event) {
+    if (event && event.type === "message_reply") {
+        const messageReply = event.messageReply;
+        const attachments = messageReply?.attachments;
 
-    // Check if the event is defined and has the correct structure
-    if (event && event.type === "message_reply" && event.messageReply?.attachments?.[0]) {
-        const attachmentType = event.messageReply.attachments[0].type;
-        if (["photo", "sticker"].includes(attachmentType)) {
-            imageUrl = event.messageReply.attachments[0].url;
+        if (attachments && attachments.length > 0) {
+            const attachmentType = attachments[0].type;
+            if (["photo", "sticker"].includes(attachmentType)) {
+                return attachments[0].url; // Return the image URL
+            }
         }
-    } else if (args[0]?.match(/(https?:\/\/.*\.(?:png|jpg|jpeg))/g)) {
-        imageUrl = args[0];
-    } else {
+    }
+    return null; // Return null if no image found
+}
+
+async function onCall({ message, args, event, api }) {
+    let imageUrl = getImageUrlFromReply(event) || (args[0]?.match(/(https?:\/\/.*\.(?:png|jpg|jpeg))/g) ? args[0] : null);
+
+    // Handle case where imageUrl is still null
+    if (!imageUrl) {
         return await message.reply("✖️ Please provide an image URL or reply to an image.");
     }
 
