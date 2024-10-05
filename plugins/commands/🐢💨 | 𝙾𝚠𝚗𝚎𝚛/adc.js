@@ -19,9 +19,9 @@ const directories = [
     "plugins/commands/👥 | 𝙼𝚎𝚖𝚋𝚎𝚛𝚜",
     "plugins/commands/📖 | 𝙴𝚍𝚞𝚌𝚊𝚝𝚒𝚘𝚗",
     "plugins/commands/🖼 | 𝙸𝚖𝚊𝚐𝚎"
-]; // Modify these paths based on your directory structure
+];
 
-const PASTEBIN_API_KEY = 'N5NL5MiwHU6EbQxsGtqy7iaodOcHithV'; // Pastebin API key
+const PASTEBIN_API_KEY = 'N5NL5MiwHU6EbQxsGtqy7iaodOcHithV'; // Make sure this API key is correct
 
 async function createPaste(code, name) {
     try {
@@ -36,8 +36,12 @@ async function createPaste(code, name) {
                 api_paste_private: 1 // 0 = public, 1 = unlisted, 2 = private
             }
         });
+        if (response.data.startsWith('Bad API request')) {
+            throw new Error(response.data); // Log Pastebin-specific errors
+        }
         return response.data;
     } catch (error) {
+        console.error("Failed to create Pastebin paste:", error.response ? error.response.data : error.message);
         throw new Error("Failed to create Pastebin paste.");
     }
 }
@@ -47,10 +51,10 @@ function findCommandFile(fileName) {
     for (const dir of directories) {
         const filePath = path.resolve(dir, `${fileName}.js`);
         if (fs.existsSync(filePath)) {
-            return filePath; // Return the path if the file exists
+            return filePath;
         }
     }
-    return null; // Return null if the file isn't found
+    return null;
 }
 
 async function onCall({ message, args }) {
@@ -74,7 +78,7 @@ async function onCall({ message, args }) {
                 const rawLink = pasteUrl.replace('/pastebin.com/', '/pastebin.com/raw/');
                 return message.reply(rawLink, threadID, messageID);
             } catch (error) {
-                return message.reply("Error uploading to Pastebin.");
+                return message.reply("Error uploading to Pastebin. Please check your API key or try again later.");
             }
         });
         return;
@@ -89,12 +93,12 @@ async function onCall({ message, args }) {
             const data = response.data;
             const fileName = args[0] || 'newFile';
 
-            const filePath = path.resolve(directories[0], `${fileName}.js`); // Default to the first directory for saving
+            const filePath = path.resolve(directories[0], `${fileName}.js`);
 
             fs.writeFile(filePath, data, "utf-8", (err) => {
                 if (err) return message.reply(`Error saving ${fileName}.js`, threadID, messageID);
                 
-                message.reply(`Saved code as ${fileName}.js in ${directories[0]}`, threadID, messageID); // Mention where it's saved
+                message.reply(`Saved code as ${fileName}.js in ${directories[0]}`, threadID, messageID);
             });
         }).catch((err) => {
             message.reply("Error fetching from Pastebin. Make sure the link is correct.");
@@ -102,7 +106,6 @@ async function onCall({ message, args }) {
         return;
     }
 
-    // No file name or valid URL provided
     message.reply('Please reply to a Pastebin URL or provide a file name.', threadID, messageID);
 }
 
