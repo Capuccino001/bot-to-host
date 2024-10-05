@@ -10,8 +10,6 @@ const config = {
     credits: "Coffee",
 };
 
-const previousResponses = new Map(); // Store previous responses for follow-up
-
 async function onCall({ message, args }) {
     const query = args.join(" ") || "hi";
     const userId = message.senderID; // Get user ID from message
@@ -45,15 +43,7 @@ async function onCall({ message, args }) {
         const { data } = await axios.get(`https://orc-six.vercel.app/gpt4?ask=${encodeURIComponent(query)}`);
 
         if (data) {
-            // Handle follow-ups
-            const previousResponse = previousResponses.get(userId);
-            if (previousResponse) {
-                await message.send(`${header}\nFollow-up on: "${previousResponse}"\nUser reply: "${query}"\n\n${data}\n${footer}`);
-            } else {
-                await message.send(`${header}\n${data}\n${footer}`);
-            }
-            // Store the latest response for future follow-ups
-            previousResponses.set(userId, data);
+            await message.send(`${header}\n${data}\n${footer}`);
         } else {
             await message.send(`${header}\nSorry, I couldn't get a response from the API.\n${footer}`);
         }
