@@ -3,60 +3,69 @@ import { join } from 'path';
 import axios from 'axios';
 import { fileURLToPath } from 'url';
 
-const __dirname = join(fileURLToPath(import.meta.url), '..'); // Resolves __dirname for ES modules
+const __dirname = join(fileURLToPath(import.meta.url), '..');
 
-export default {
-  config: {
+const config = {
     name: "remini",
     aliases: [],
     version: "2.0",
     author: "Vex_Kshitiz",
-    countDown: 20,
-    role: 0,
-    shortDescription: "remini",
-    longDescription: "enhance the image quality",
-    category: "tool",
-    guide: {
-      en: "{p}remini (reply to image)",
-    }
-  },
+    description: "Enhance the image quality",
+    usage: "(reply to an image)",
+    cooldown: 20,
+    permissions: [1, 2],
+    credits: "Coffee",
+};
 
-  onStart: async function ({ message, event, api }) {
-    api.setMessageReaction("🕰️", event.messageID, (err) => {}, true);
+async function onCall({ message, event, api }) {
     const { type: messageType, messageReply } = event;
-    const { attachments, threadID, messageID } = messageReply || {};
+    const { attachments, threadID } = messageReply || {};
 
-    if (messageType === "message_reply" && attachments) {
-      const [attachment] = attachments;
-      const { url: imageUrl, type: attachmentType } = attachment || {};
+    if (messageType !== "message_reply" || !attachments || !["photo", "sticker"].includes(attachments[0].type)) {
+        return await message.reply("❌ | Please reply to an image.");
+    }
 
-      if (!attachment || !["photo", "sticker"].includes(attachmentType)) {
-        return message.reply("❌ | Reply must be an image.");
-      }
+    const { url: imageUrl } = attachments[0] || {};
 
-      try {
+    try {
+        await message.react("🕰️");
+        const stopTypingIndicator = api.sendTypingIndicator(threadID);
+
+        // Make API request to enhance image
         const { data } = await axios.get(`https://vex-kshitiz.vercel.app/upscale?url=${encodeURIComponent(imageUrl)}`, {
-          responseType: "json"
+            responseType: "json"
         });
 
+        if (!data.result_url) {
+            throw new Error("No result_url in API response.");
+        }
+
+        // Download enhanced image
         const enhancedImageUrl = data.result_url;
         const imageResponse = await axios.get(enhancedImageUrl, { responseType: "arraybuffer" });
 
+        // Prepare cache directory and save the enhanced image
         const cacheDir = join(__dirname, "cache");
         if (!existsSync(cacheDir)) {
-          mkdirSync(cacheDir, { recursive: true });
+            mkdirSync(cacheDir, { recursive: true });
         }
 
         const imagePath = join(cacheDir, "remi_image.png");
         writeFileSync(imagePath, imageResponse.data);
 
-        message.reply({ attachment: createReadStream(imagePath) }, threadID);
-      } catch (error) {
-        console.error(error);
-        message.reply("❌ | Error occurred while enhancing image.");
-      }
-    } else {
-      message.reply("❌ | Please reply to an image.");
+        stopTypingIndicator();
+
+        // Reply with the enhanced image
+        await message.reply({ attachment: createReadStream(imagePath) }, threadID);
+        await message.react("✔️");
+    } catch (error) {
+        console.error("Error enhancing image: ", error);
+        await message.react("✖️");
+        await message.reply("❌ | Error occurred while enhancing image.");
     }
-  }
+}
+
+export default {
+    config,
+    onCall,
 };
