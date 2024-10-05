@@ -13,14 +13,14 @@ const config = {
     credits: "Strawhat Luffy & kshitiz",
 };
 
-async function onCall({ message, args, event, api }) {
+async function onCall({ message, args, api }) {
     let imageUrl;
 
     // Check if the message is a reply and has an attachment (image or sticker)
-    if (event.type === "message_reply" && event.messageReply?.attachments?.[0]) {
-        const attachmentType = event.messageReply.attachments[0].type;
+    if (message.isReply && message.replyMessage && message.replyMessage.attachments && message.replyMessage.attachments[0]) {
+        const attachmentType = message.replyMessage.attachments[0].type;
         if (["photo", "sticker"].includes(attachmentType)) {
-            imageUrl = event.messageReply.attachments[0].url;
+            imageUrl = message.replyMessage.attachments[0].url;
         }
     } else if (args[0]?.match(/(https?:\/\/.*\.(?:png|jpg|jpeg))/g)) {
         imageUrl = args[0];
