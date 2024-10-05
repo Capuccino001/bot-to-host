@@ -31,7 +31,8 @@ async function onCall({ message }) {
         return await message.reply("✖️ Please provide an image URL or reply to an image.");
     }
 
-    const processingMessage = await message.reply("🕰️ Removing background...");
+    // React with the processing emoji
+    await message.react("🕰️");
 
     try {
         // Make API request to remove background
@@ -58,14 +59,14 @@ async function onCall({ message }) {
         const filePath = join(cacheDir, `${Date.now()}.png`);
         writeFileSync(filePath, outputBuffer);
 
-        // Reply with the image as an attachment using message.send
-        await message.send({ attachment: createReadStream(filePath) }, threadID);
+        // Send the image with the completion message in a single message
+        const messageWithImage = await message.send({
+            body: "✅ Background removal complete!",
+            attachment: createReadStream(filePath)
+        }, threadID);
 
         // Delete the temporary image file after sending
         unlinkSync(filePath);
-
-        // Update the processing message to indicate completion
-        await message.send("✅ Background removal complete!"); // Change to message.send
 
     } catch (error) {
         console.error("RemoveBG API call failed: ", error);
@@ -82,9 +83,6 @@ async function onCall({ message }) {
             await message.send(errorMessage, adminID); // Change to message.send
         }
     }
-
-    // Optionally remove the processing message if needed
-    // await message.unsend(processingMessage.messageID); // If you decide to keep this line, remove the comment
 }
 
 export default {
