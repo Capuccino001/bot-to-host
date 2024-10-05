@@ -19,8 +19,8 @@ const config = {
 async function onCall({ message, args, event, api }) {
     let imageUrl;
 
-    // Check if the message is a reply and has an attachment (image or sticker)
-    if (event.type === "message_reply" && event.messageReply?.attachments?.[0]) {
+    // Check if the event is defined and has the correct structure
+    if (event && event.type === "message_reply" && event.messageReply?.attachments?.[0]) {
         const attachmentType = event.messageReply.attachments[0].type;
         if (["photo", "sticker"].includes(attachmentType)) {
             imageUrl = event.messageReply.attachments[0].url;
