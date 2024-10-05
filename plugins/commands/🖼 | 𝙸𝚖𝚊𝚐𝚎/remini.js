@@ -9,7 +9,6 @@ const config = {
     name: "remini",
     aliases: [],
     version: "2.0",
-    author: "Vex_Kshitiz",
     description: "Enhance the image quality",
     usage: "(reply to an image)",
     cooldown: 20,
