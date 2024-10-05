@@ -1,69 +1,81 @@
-import samirapi from 'samirapi';
-import fs from 'fs-extra';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import axios from "axios";
+import fs from "fs-extra";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const cachePath = path.join(__dirname, './plugins/commands/cache');
+const apiKey = "hgEG2LSoC8VD5A2akNvcFySR";
 
 const config = {
     name: "removebg",
-    version: "1.0.0",
-    permissions: [0, 1, 2],
-    credits: "coffee",
-    description: "Removes the background from an image.",
-    commandCategory: "𝙸𝚖𝚊𝚐𝚎",
-    usages: "Reply to an image message to remove its background.",
-    cooldown: 5,
+    aliases: ["rbg"],
+    description: "Remove background from an image. Reply to an image or add an image URL to use the command.",
+    usage: "reply to an image URL or add an image URL",
+    cooldown: 20,
+    permissions: [0],
+    credits: "Strawhat Luffy & kshitiz",
 };
 
-async function onCall({ message }) {
-    const reply = message.messageReply;
+async function onCall({ message, args, event, api }) {
+    let imageUrl;
+    let type;
 
-    if (!reply || !reply.attachments || reply.attachments.length === 0) {
-        return message.reply("📷 Please reply to an image message to remove its background.");
+    // Determine if it's a message reply with an image or an image URL provided directly
+    if (event.type === "message_reply" && ["photo", "sticker"].includes(event.messageReply.attachments[0].type)) {
+        imageUrl = event.messageReply.attachments[0].url;
+        type = isNaN(args[0]) ? 1 : Number(args[0]);
+    } else if (args[0]?.match(/(https?:\/\/.*\.(?:png|jpg|jpeg))/g)) {
+        imageUrl = args[0];
+        type = isNaN(args[1]) ? 1 : Number(args[1]);
+    } else {
+        return await message.reply("✖️ Please provide an image URL or reply to an image.");
     }
 
-    const attachment = reply.attachments[0];
-    
-    if (attachment.type !== "photo") {
-        return message.reply("❌ This is not a photo.");
-    }
-
-    let filePath; // Declare filePath outside the try block
+    const processingMessage = await message.reply("🕰️ Removing background...");
 
     try {
-        const imageUrl = attachment.url;
-        const imageBuffer = await samirapi.remBackground(imageUrl);
-        filePath = path.join(cachePath, 'no_background.png');
-
-        // Ensure the cache directory exists
-        await fs.ensureDir(cachePath);
-
-        // Save the image with the background removed
-        await fs.outputFile(filePath, imageBuffer);
-
-        // Send the enhanced image as a reply
-        await message.reply({
-            body: "✨ Here is the image with the background removed:",
-            attachment: fs.createReadStream(filePath)
-        });
-    } catch (error) {
-        console.error(error);
-        return message.reply("⚠️ An error occurred while removing the background. Please try again later.");
-    } finally {
-        // Cleanup the cached file if it exists
-        if (filePath) {
-            try {
-                await fs.unlink(filePath);
-            } catch (cleanupError) {
-                console.error("Cleanup failed:", cleanupError);
+        const response = await axios.post(
+            "https://api.remove.bg/v1.0/removebg",
+            { image_url: imageUrl, size: "auto" },
+            {
+                headers: {
+                    "X-Api-Key": apiKey,
+                    "Content-Type": "application/json",
+                },
+                responseType: "arraybuffer",
             }
+        );
+
+        const outputBuffer = Buffer.from(response.data, "binary");
+        const fileName = `${Date.now()}.png`;
+        const filePath = `./${fileName}`;
+
+        fs.writeFileSync(filePath, outputBuffer);
+
+        // Send the image as an attachment
+        await message.reply({ attachment: fs.createReadStream(filePath) });
+
+        // Delete the temporary image file after sending
+        fs.unlinkSync(filePath);
+
+    } catch (error) {
+        console.error("RemoveBG API call failed: ", error);
+        await message.reply("⚠️ Something went wrong. Please try again later. The issue has been reported.");
+        
+        // Notify admin of the error
+        const errorMessage = `
+            ----RemoveBG Log----
+            Something is causing an error with the removebg command.
+            Check if the API key is still valid at: https://www.remove.bg/dashboard
+        `;
+        const { config } = global.GoatBot;
+        for (const adminID of config.adminBot) {
+            await api.sendMessage(errorMessage, adminID);
         }
     }
+
+    // Remove the processing message
+    await message.unsend(processingMessage.messageID);
 }
 
 export default {
     config,
-    onCall
+    onCall,
 };
