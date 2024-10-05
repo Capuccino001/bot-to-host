@@ -1,13 +1,16 @@
 import axios from "axios";
 import fs from "fs-extra";
+import { join } from "path";
+import { fileURLToPath } from "url";
 
+const __dirname = join(fileURLToPath(import.meta.url), '..');
 const apiKey = "hgEG2LSoC8VD5A2akNvcFySR";
 
 const config = {
     name: "removebg",
     aliases: ["rbg"],
     description: "Remove background from an image. Reply to an image or add an image URL to use the command.",
-    usage: "reply to an image URL or add an image URL",
+    usage: "reply to an image or provide an image URL",
     cooldown: 20,
     permissions: [0],
     credits: "Strawhat Luffy & kshitiz",
@@ -17,14 +20,16 @@ async function onCall({ message, args, api }) {
     let imageUrl;
 
     // Check if the message is a reply and has an attachment (image or sticker)
-    if (message.isReply && message.replyMessage && message.replyMessage.attachments && message.replyMessage.attachments[0]) {
-        const attachmentType = message.replyMessage.attachments[0].type;
-        if (["photo", "sticker"].includes(attachmentType)) {
-            imageUrl = message.replyMessage.attachments[0].url;
+    if (message.isReply && message.replyMessage && message.replyMessage.attachments) {
+        const attachment = message.replyMessage.attachments[0];
+        if (["photo", "sticker"].includes(attachment.type)) {
+            imageUrl = attachment.url;
         }
     } else if (args[0]?.match(/(https?:\/\/.*\.(?:png|jpg|jpeg))/g)) {
         imageUrl = args[0];
-    } else {
+    }
+
+    if (!imageUrl) {
         return await message.reply("✖️ Please provide an image URL or reply to an image.");
     }
 
@@ -45,7 +50,7 @@ async function onCall({ message, args, api }) {
 
         const outputBuffer = Buffer.from(response.data, "binary");
         const fileName = `${Date.now()}.png`;
-        const filePath = `./${fileName}`;
+        const filePath = join(__dirname, fileName); // Use __dirname to create a file path
 
         fs.writeFileSync(filePath, outputBuffer);
 
