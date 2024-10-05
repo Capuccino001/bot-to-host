@@ -12,9 +12,9 @@ const config = {
 
 const previousResponses = new Map(); // Store previous responses for each user
 
-async function onCall({ message, args, event }) {
+async function onCall({ message, args }) {
     const userQuery = args.join(" ");
-    const userId = event.senderID; // Get user ID
+    const userId = message.senderID; // Get user ID from message
 
     // Handle case where no query is provided
     if (!userQuery) {
@@ -29,8 +29,8 @@ async function onCall({ message, args, event }) {
 
     try {
         // Check for image attachments in the original message
-        if (event.messageReply && event.messageReply.attachments && event.messageReply.attachments[0]?.type === "photo") {
-            const attachment = event.messageReply.attachments[0];
+        if (message.messageReply && message.messageReply.attachments && message.messageReply.attachments[0]?.type === "photo") {
+            const attachment = message.messageReply.attachments[0];
             const imageURL = attachment.url;
 
             const geminiUrl = `https://joncll.serv00.net/chat.php?ask=${encodeURIComponent(query)}&imgurl=${encodeURIComponent(imageURL)}`;
