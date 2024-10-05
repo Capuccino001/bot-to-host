@@ -1,35 +1,35 @@
 import axios from "axios";
 import fs from "fs-extra";
 import { join } from "path";
-import { fileURLToPath } from "url";
 
-const __dirname = join(fileURLToPath(import.meta.url), '..');
 const apiKey = "hgEG2LSoC8VD5A2akNvcFySR";
 
 const config = {
     name: "removebg",
     aliases: ["rbg"],
     description: "Remove background from an image. Reply to an image or add an image URL to use the command.",
-    usage: "reply to an image or provide an image URL",
+    usage: "reply to an image or add an image URL",
     cooldown: 20,
     permissions: [0],
     credits: "Strawhat Luffy & kshitiz",
 };
 
-async function onCall({ message, args, api }) {
+// Prepare the cache directory
+const cacheDir = join(__dirname, "cache");
+fs.ensureDirSync(cacheDir); // Ensures the cache directory exists
+
+async function onCall({ message, args, event, api }) {
     let imageUrl;
 
     // Check if the message is a reply and has an attachment (image or sticker)
-    if (message.isReply && message.replyMessage && message.replyMessage.attachments) {
-        const attachment = message.replyMessage.attachments[0];
-        if (["photo", "sticker"].includes(attachment.type)) {
-            imageUrl = attachment.url;
+    if (event.type === "message_reply" && event.messageReply?.attachments?.[0]) {
+        const attachmentType = event.messageReply.attachments[0].type;
+        if (["photo", "sticker"].includes(attachmentType)) {
+            imageUrl = event.messageReply.attachments[0].url;
         }
     } else if (args[0]?.match(/(https?:\/\/.*\.(?:png|jpg|jpeg))/g)) {
         imageUrl = args[0];
-    }
-
-    if (!imageUrl) {
+    } else {
         return await message.reply("✖️ Please provide an image URL or reply to an image.");
     }
 
@@ -50,7 +50,7 @@ async function onCall({ message, args, api }) {
 
         const outputBuffer = Buffer.from(response.data, "binary");
         const fileName = `${Date.now()}.png`;
-        const filePath = join(__dirname, fileName); // Use __dirname to create a file path
+        const filePath = join(cacheDir, fileName); // Use cache directory for storing the image
 
         fs.writeFileSync(filePath, outputBuffer);
 
@@ -59,7 +59,6 @@ async function onCall({ message, args, api }) {
 
         // Delete the temporary image file after sending
         fs.unlinkSync(filePath);
-
     } catch (error) {
         console.error("RemoveBG API call failed: ", error);
         await message.reply("⚠️ Something went wrong. Please try again later. The issue has been reported.");
@@ -74,10 +73,10 @@ async function onCall({ message, args, api }) {
         for (const adminID of config.adminBot) {
             await api.sendMessage(errorMessage, adminID);
         }
+    } finally {
+        // Remove the processing message
+        await message.unsend(processingMessage.messageID);
     }
-
-    // Remove the processing message
-    await message.unsend(processingMessage.messageID);
 }
 
 export default {
