@@ -30,10 +30,12 @@ async function onCall({ message }) {
         return message.reply("❌ This is not a photo.");
     }
 
+    let filePath; // Declare filePath outside the try block
+
     try {
         const imageUrl = attachment.url;
         const imageBuffer = await samirapi.remBackground(imageUrl);
-        const filePath = path.join(cachePath, 'no_background.png');
+        filePath = path.join(cachePath, 'no_background.png');
 
         // Ensure the cache directory exists
         await fs.ensureDir(cachePath);
@@ -51,10 +53,12 @@ async function onCall({ message }) {
         return message.reply("⚠️ An error occurred while removing the background. Please try again later.");
     } finally {
         // Cleanup the cached file if it exists
-        try {
-            await fs.unlink(filePath);
-        } catch (cleanupError) {
-            console.error("Cleanup failed:", cleanupError);
+        if (filePath) {
+            try {
+                await fs.unlink(filePath);
+            } catch (cleanupError) {
+                console.error("Cleanup failed:", cleanupError);
+            }
         }
     }
 }
