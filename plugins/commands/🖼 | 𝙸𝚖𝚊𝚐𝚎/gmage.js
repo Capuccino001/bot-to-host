@@ -55,7 +55,7 @@ async function onCall({ message, args }) {
                         responseType: 'stream',
                     });
 
-                    const outputFileName = path.join(__dirname, 'tmp', `downloaded_image_${imgData.length + 1}.png`);
+                    const outputFileName = path.join(__dirname, 'cache', `downloaded_image_${imgData.length + 1}.png`);
                     const writer = fs.createWriteStream(outputFileName);
 
                     response.data.pipe(writer);
