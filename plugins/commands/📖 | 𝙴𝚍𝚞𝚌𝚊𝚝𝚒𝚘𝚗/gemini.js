@@ -10,25 +10,22 @@ const config = {
     credits: "coffee",
 };
 
-const previousResponses = new Map(); // Store previous responses for each user
+const previousResponses = new Map();
 
 async function onCall({ message, args }) {
     const userQuery = args.join(" ");
-    const userId = message.senderID; // Get user ID from message
+    const userId = message.senderID;
 
-    // Handle case where no query is provided
     if (!userQuery) {
         return message.reply("ᯓ★ | 𝙶𝚎𝚖𝚒𝚗𝚒\n・──────────────・\nHello! How can I assist you today?\n・───── >ᴗ< ──────・");
     }
 
-    // Check for previous response to handle follow-ups
     const previousResponse = previousResponses.get(userId);
     const query = previousResponse ? `Follow-up on: "${previousResponse}"\nUser reply: "${userQuery}"` : userQuery;
 
-    await message.react("🕰️"); // Indicate processing
+    await message.react("🕰️");
 
     try {
-        // Check for image attachments in the original message
         if (message.messageReply && message.messageReply.attachments && message.messageReply.attachments[0]?.type === "photo") {
             const attachment = message.messageReply.attachments[0];
             const imageURL = attachment.url;
@@ -40,29 +37,27 @@ async function onCall({ message, args }) {
             if (vision) {
                 return message.reply(`ᯓ★ | 𝙶𝚎𝚖𝚒𝚗𝚒\n・──────────────・\n${vision}\n・───── >ᴗ< ──────・`);
             } else {
-                return message.reply("🤖 Failed to recognize the image.");
+                return message.reply(" Failed to recognize the image.");
             }
         }
 
-        // Use the Google Gemini API for text queries
         const { data } = await axios.get(`https://deku-rest-api.gleeze.com/gemini`, {
             params: {
                 prompt: query
             }
         });
 
-        // Validate the response and respond accordingly
         if (data?.gemini) {
-            previousResponses.set(userId, data.gemini); // Store the latest response
+            previousResponses.set(userId, data.gemini);
             await message.reply(`ᯓ★ | 𝙶𝚎𝚖𝚒𝚗𝚒\n・──────────────・\n${data.gemini}\n・───── >ᴗ< ──────・`);
-            await message.react("✔️"); // React with ✔️ on success
+            await message.react("✔️");
         } else {
             throw new Error("Unexpected response format from API");
         }
     } catch (error) {
         console.error("API call failed:", error);
-        await message.react("✖️"); // React with ✖️ on error
-        await message.reply("⚠️ An error occurred while fetching the data."); // Error message
+        await message.react("✖️");
+        await message.reply(" An error occurred while fetching the data.");
     }
 }
 
