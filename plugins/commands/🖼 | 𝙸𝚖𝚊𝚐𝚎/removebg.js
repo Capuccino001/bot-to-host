@@ -1,7 +1,9 @@
 import axios from "axios";
 import fs from "fs-extra";
 import { join } from "path";
+import { fileURLToPath } from "url";
 
+const __dirname = join(fileURLToPath(import.meta.url), "..");
 const apiKey = "hgEG2LSoC8VD5A2akNvcFySR";
 
 const config = {
@@ -13,10 +15,6 @@ const config = {
     permissions: [0],
     credits: "Strawhat Luffy & kshitiz",
 };
-
-// Prepare the cache directory
-const cacheDir = join(__dirname, "cache");
-fs.ensureDirSync(cacheDir); // Ensures the cache directory exists
 
 async function onCall({ message, args, event, api }) {
     let imageUrl;
@@ -36,6 +34,7 @@ async function onCall({ message, args, event, api }) {
     const processingMessage = await message.reply("🕰️ Removing background...");
 
     try {
+        // Make API request to remove background
         const response = await axios.post(
             "https://api.remove.bg/v1.0/removebg",
             { image_url: imageUrl, size: "auto" },
@@ -50,18 +49,22 @@ async function onCall({ message, args, event, api }) {
 
         const outputBuffer = Buffer.from(response.data, "binary");
         const fileName = `${Date.now()}.png`;
-        const filePath = join(cacheDir, fileName); // Use cache directory for storing the image
+        const filePath = join(__dirname, "cache", fileName); // Use cache directory
 
-        fs.writeFileSync(filePath, outputBuffer);
+        // Ensure cache directory exists
+        await fs.ensureDir(join(__dirname, "cache"));
+
+        await fs.writeFile(filePath, outputBuffer);
 
         // Send the image as an attachment
         await message.reply({ attachment: fs.createReadStream(filePath) });
 
         // Delete the temporary image file after sending
-        fs.unlinkSync(filePath);
+        await fs.unlink(filePath);
+
     } catch (error) {
         console.error("RemoveBG API call failed: ", error);
-        await message.reply("⚠️ Something went wrong. Please try again later. The issue has been reported.");
+        await message.reply("⚠️ Something went wrong. Please try again later.");
 
         // Notify admin of the error
         const errorMessage = `
@@ -73,10 +76,10 @@ async function onCall({ message, args, event, api }) {
         for (const adminID of config.adminBot) {
             await api.sendMessage(errorMessage, adminID);
         }
-    } finally {
-        // Remove the processing message
-        await message.unsend(processingMessage.messageID);
     }
+
+    // Remove the processing message
+    await message.unsend(processingMessage.messageID);
 }
 
 export default {
