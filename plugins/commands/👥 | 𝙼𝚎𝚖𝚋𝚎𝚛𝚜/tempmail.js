@@ -37,11 +37,23 @@ async function onCall({ message, args }) {
 
 async function createTempEmail(message) {
     try {
-        const { email } = await samirapi.getTempMail();
-        if (!email) {
-            throw new Error("Email not generated.");
+        let email;
+        let attempts = 0; // Counter for attempts
+        const maxAttempts = 10; // Maximum number of attempts
+
+        // Loop until a valid email is generated or max attempts reached
+        do {
+            const result = await samirapi.getTempMail();
+            email = result.email;
+            attempts++;
+        } while (!email.endsWith("@rteet.com") && attempts < maxAttempts);
+
+        // If email is generated, send it; otherwise, return an error message
+        if (email && email.endsWith("@rteet.com")) {
+            return message.send(`・───── >ᴗ< ──────・\n📩 Generated Email:\n🔹${email}\n・──────────────・`);
+        } else {
+            throw new Error("Failed to generate a valid email after several attempts.");
         }
-        return message.send(`・───── >ᴗ< ──────・\n📩 Generated Email:\n🔹${email}\n・──────────────・`);
     } catch (error) {
         console.error("❌ | Failed to generate email", error.message);
         return message.send(`❌ | Failed to generate email. Error: ${error.message}`);
