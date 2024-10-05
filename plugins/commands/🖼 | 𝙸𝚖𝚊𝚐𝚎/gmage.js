@@ -1,6 +1,11 @@
 import path from 'path';
 import fs from 'fs-extra';
 import axios from 'axios';
+import { fileURLToPath } from 'url';
+
+// Manually define __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const config = {
     name: "gmage",
