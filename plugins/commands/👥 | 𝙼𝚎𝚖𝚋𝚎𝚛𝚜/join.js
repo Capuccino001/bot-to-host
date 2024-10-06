@@ -24,6 +24,7 @@ async function getAvailableThreads(threadID) {
                     threadID: thread.threadID,
                     name: thread.info.name || thread.threadID,
                     membersLength,
+                    members: thread.info?.members || [] // Include the members list
                 });
             }
         }
@@ -60,15 +61,19 @@ async function replyHandler({ eventData, message }) {
     console.log('Selected Thread:', selectedThread);
 
     // Check if the user is already a member of the selected thread
-    const isAlreadyMember = selectedThread.membersLength >= 250; // Assuming 250 is the max members
+    const isAlreadyMember = selectedThread.members.includes(senderID);
+
+    if (isAlreadyMember) {
+        return message.reply(`⚠️ You are already a member of the thread "${selectedThread.name}".`);
+    }
+
+    // Check for maximum members
+    if (selectedThread.membersLength >= 250) { // Assuming 250 is the max members
+        return message.reply(`⚠️ You can't be added to the thread "${selectedThread.name}" as it is already full.`);
+    }
 
     // Attempt to add the user to the selected thread
     try {
-        if (isAlreadyMember) {
-            return message.reply(`⚠️ You can't be added to the thread "${selectedThread.name}" as it is already full.`);
-        }
-
-        // Assuming this method throws specific errors that we can catch
         await global.api.addUserToGroup(senderID, selectedThread.threadID); // Use senderID instead of author
         await message.reply(`You have been added to the thread: ${selectedThread.name}`);
         await message.react("✔️"); // React with ✔️ on success
