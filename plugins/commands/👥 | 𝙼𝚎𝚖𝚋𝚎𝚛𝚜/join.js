@@ -28,7 +28,7 @@ async function getAvailableThreads(threadID) {
         }
     } catch (error) {
         console.error('Error fetching threads:', error);
-        throw new Error("Error listing group chats"); // Error message 1
+        return message.reply("Error listing group chats"); // Error message 1
     }
 
     return availableThreads;
@@ -69,16 +69,14 @@ async function replyHandler({ eventData, message }) {
         console.error('Error adding user:', error);
         await message.react("✖️"); 
 
-        // Handle specific error messages without using `includes`
-        if (error.message === "User already in the group") {
-            return message.reply("User already in the group"); // Error message 5
-        } else if (error.message === "Group chat is full") {
-            return message.reply("Group chat is full"); // Error message 6
-        } else if (error.message === "Private chat settings") {
-            return message.reply(`Private chat settings\n\nFailed to add you to the group because you have set your chat to private only.\n\n▫Do this to fix it▫\nchat settings > privacy&safety > message delivery > Others > message requests.`); // Error message 8
-        } else {
-            return message.reply(`Additional error message: ${error.message}`); // Error message 9
-        }
+        const errorMessages = {
+            "User already in the group": "User already in the group", // Error message 5
+            "Group chat is full": "Group chat is full", // Error message 6
+            "Private chat settings": `Private chat settings\n\nFailed to add you to the group because you have set your chat to private only.\n\n▫Do this to fix it▫\nchat settings > privacy&safety > message delivery > Others > message requests.`, // Error message 8
+        };
+
+        // Fallback to a generic message if no specific error is found
+        return message.reply(errorMessages[error.message] || `Additional error message: ${error.message}`); // Error message 9
     }
 }
 
@@ -113,7 +111,7 @@ async function onCall({ message, args }) {
 
     } catch (error) {
         // Handle the error if something goes wrong during the call
-        await message.reply(error.message || "Error joining group chat"); // Error message 7
+        return message.reply("Error joining group chat"); // Error message 7
     }
 }
 
