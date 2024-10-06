@@ -10,14 +10,15 @@ const config = {
 
 const globalPendingRequests = {};
 
-async function onCall({ message, args, api }) {
-    const { threadID, authorID, body } = message;
+async function onCall({ message, args }) {
+    const { api } = global;
+    const { threadID, author } = message;
 
     // Fetch available threads only if there's no pending request
     const availableThreads = await getAvailableThreads();
 
     if (availableThreads.length === 0) {
-        return api.sendMessage("No available threads to join.", threadID);
+        return message.reply("No available threads to join.");
     }
 
     // Create a list of available threads with their indexes
@@ -25,46 +26,52 @@ async function onCall({ message, args, api }) {
         .map((thread, index) => `${index + 1}: ${thread.name} (ID: ${thread.threadID})`)
         .join('\n');
 
-    // Send the available threads list to the user
-    api.sendMessage(`Available threads:\n${threadListMessage}\n\nReply with the number of the thread you want to join.`, threadID);
+    // Send the available threads list to the user and store the message ID
+    const replyMessage = await message.reply(`Available threads:\n${threadListMessage}\n\nReply with the number of the thread you want to join.`);
 
     // Store the pending request for the author
-    globalPendingRequests[authorID] = availableThreads;
+    globalPendingRequests[author] = {
+        threads: availableThreads,
+        messageID: replyMessage.messageID // Save the message ID to check replies
+    };
 
-    // React to indicate processing
-    api.setMessageReaction("🕰️", message.messageID, true);
+    await message.react("🕰️"); // Indicate processing
 }
 
 // Handle reply events to process the selected thread number
-async function onReply({ message, api }) {
-    const { threadID, authorID, body } = message;
+async function onReply({ message }) {
+    const { api } = global;
+    const { author, body, messageID } = message;
 
-    // Check if the user has a pending request
-    if (!globalPendingRequests[authorID]) return;
+    // Check if the message is a reply from the user with a pending request
+    if (globalPendingRequests[author]) {
+        const { threads, messageID: originalMessageID } = globalPendingRequests[author];
 
-    const availableThreads = globalPendingRequests[authorID];
+        // Ensure the reply is to the correct message
+        if (message.replyTo && message.replyTo.messageID === originalMessageID) {
+            // Parse the user's reply to get the selected thread number
+            const selectedNumber = parseInt(body, 10) - 1;
 
-    // Parse the user's reply to get the selected thread number
-    const selectedNumber = parseInt(body.trim(), 10) - 1;
+            if (!isNaN(selectedNumber) && selectedNumber >= 0 && selectedNumber < threads.length) {
+                const selectedThread = threads[selectedNumber];
 
-    if (isNaN(selectedNumber) || selectedNumber < 0 || selectedNumber >= availableThreads.length) {
-        return api.sendMessage("Invalid selection. Please reply with a valid number.", threadID);
-    }
-
-    const selectedThread = availableThreads[selectedNumber];
-
-    // Add the user to the selected thread
-    try {
-        await api.addUserToGroup(authorID, selectedThread.threadID);
-        await api.sendMessage(`You have been added to the thread: ${selectedThread.name}`, threadID);
-        await api.setMessageReaction("✔️", message.messageID, true); // React with ✔️ on success
-    } catch (error) {
-        console.error(error);
-        await api.setMessageReaction("✖️", message.messageID, true); // React with ✖️ on error
-        await api.sendMessage("⚠️ Failed to join the selected thread. Please try again later.", threadID);
-    } finally {
-        // Clear the pending request for the author
-        delete globalPendingRequests[authorID];
+                // Add the user to the selected thread
+                try {
+                    await api.addUserToGroup(author, selectedThread.threadID);
+                    await message.reply(`You have been added to the thread: ${selectedThread.name}`);
+                    await message.react("✔️"); // React with ✅ on success
+                } catch (error) {
+                    console.error(error);
+                    await message.react("✖️"); // React with ❎ on error
+                    await message.reply("⚠️ Failed to join the selected thread. Please try again later.");
+                } finally {
+                    // Clear the pending request for the author
+                    delete globalPendingRequests[author];
+                }
+            } else {
+                return message.reply("Invalid selection. Please reply with a valid number.");
+            }
+        }
     }
 }
 
