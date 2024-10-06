@@ -14,13 +14,21 @@ async function onCall({ message, args }) {
     const { api } = global;
     const { threadID, author, body } = message;
 
-    // Check if an argument was provided
-    if (args.length > 0) {
-        const selectedNumber = parseInt(args[0], 10) - 1;
+    // Check if the message is a reply from the user
+    if (message.type === "message_reply") {
+        // Check if the replied message is from the bot
+        if (message.messageReply?.senderID !== global.botID) {
+            return message.reply("You must reply to the bot's message with the available threads.");
+        }
 
-        // Check for valid input and if there's a pending request
-        if (!isNaN(selectedNumber) && selectedNumber >= 0 && globalPendingRequests[author] && selectedNumber < globalPendingRequests[author].length) {
-            const selectedThread = globalPendingRequests[author][selectedNumber];
+        // Get the user's previous threads from the pending requests
+        const availableThreads = globalPendingRequests[author];
+
+        // Parse the user's reply to get the selected thread number
+        const selectedNumber = parseInt(body, 10) - 1;
+
+        if (availableThreads && !isNaN(selectedNumber) && selectedNumber >= 0 && selectedNumber < availableThreads.length) {
+            const selectedThread = availableThreads[selectedNumber];
 
             // Add the user to the selected thread
             try {
@@ -37,15 +45,11 @@ async function onCall({ message, args }) {
             }
             return; // Exit the function after processing the join request
         } else {
-            return message.reply("Invalid selection. Please provide a valid thread number.");
+            return message.reply("Invalid selection. Please reply with a valid number.");
         }
     }
 
-    // Handle the case when no arguments are provided and fetch available threads
-    if (globalPendingRequests[author]) {
-        return message.reply("You already have a pending request. Please reply with the thread number or use the command format.");
-    }
-
+    // Fetch available threads only if there's no pending request
     const availableThreads = await getAvailableThreads();
 
     if (availableThreads.length === 0) {
@@ -58,7 +62,7 @@ async function onCall({ message, args }) {
         .join('\n');
 
     // Send the available threads list to the user
-    await message.reply(`Available threads:\n${threadListMessage}\n\nReply with the number of the thread you want to join, or use the command format (join 1, join 2, etc.).`);
+    const replyMessage = await message.reply(`Available threads:\n${threadListMessage}\n\nReply with the number of the thread you want to join.`);
 
     // Store the pending request for the author
     globalPendingRequests[author] = availableThreads;
