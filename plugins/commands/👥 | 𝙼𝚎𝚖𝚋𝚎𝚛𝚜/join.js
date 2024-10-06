@@ -10,13 +10,13 @@ const config = {
 
 const globalPendingRequests = {};
 
-// Existing thread IDs and names
+// Existing thread IDs, names, and member counts
 const threadData = {
-    "7109055135875814": "𝙵𝚛𝚎𝚎 𝚂𝚎𝚊𝚛𝚌𝚑 𝚟1🧋✨",
-    "7905899339426702": "𝙵𝚛𝚎𝚎 𝚂𝚎𝚊𝚛𝚌𝚑 𝚟2🧋✨",
-    "7188533334598873": "𝙵𝚛𝚎𝚎 𝚂𝚎𝚊𝚛𝚌𝚑 𝚟3🧋✨",
-    "25540725785525846": "𝙵𝚛𝚎𝚎 𝚂𝚎𝚊𝚛𝚌𝚑 𝚟4🧋✨",
-    "26605074275750715": "𝙵𝚛𝚎𝚎 𝚂𝚎𝚊𝚛𝚌𝚑 𝚟5🧋✨"
+    "7109055135875814": { name: "𝙵𝚛𝚎𝚎 𝚂𝚎𝚊𝚛𝚌𝚑 𝚟1🧋✨", membersLength: 150 },
+    "7905899339426702": { name: "𝙵𝚛𝚎𝚎 𝚂𝚎𝚊𝚛𝚌𝚑 𝚟2🧋✨", membersLength: 200 },
+    "7188533334598873": { name: "𝙵𝚛𝚎𝚎 𝚂𝚎𝚊𝚛𝚌𝚑 𝚟3🧋✨", membersLength: 120 },
+    "25540725785525846": { name: "𝙵𝚛𝚎𝚎 𝚂𝚎𝚊𝚛𝚌𝚑 𝚟4🧋✨", membersLength: 250 },
+    "26605074275750715": { name: "𝙵𝚛𝚎𝚎 𝚂𝚎𝚊𝚛𝚌𝚑 𝚟5🧋✨", membersLength: 80 },
 };
 
 async function onCall({ message, args }) {
@@ -60,18 +60,12 @@ async function onCall({ message, args }) {
         }
     }
 
-    // Create an array of available threads using existing thread data and fetching member counts
-    const availableThreads = await Promise.all(
-        Object.entries(threadData).map(async ([threadID, name]) => {
-            // Fetch the member count for the current thread
-            const members = await api.getGroupMembers(threadID); // Assume this function returns the members of the group
-            return {
-                threadID,
-                name,
-                membersLength: members.length // Get the number of members in the thread
-            };
-        })
-    );
+    // Create an array of available threads using existing thread data
+    const availableThreads = Object.entries(threadData).map(([threadID, { name, membersLength }]) => ({
+        threadID,
+        name,
+        membersLength,
+    }));
 
     if (availableThreads.length === 0) {
         return message.reply("No available threads to join.");
