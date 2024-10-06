@@ -75,13 +75,13 @@ async function replyHandler({ eventData, message }) {
         console.error('Error adding user:', error);
         await message.react("✖️"); // React with ✖️ on error
 
-        // Handle specific error messages
-        if (error.message.indexOf("private only") !== -1) {
+        // Handle specific error messages using plain string comparison
+        const errorMessage = error.message || '';
+
+        if (errorMessage === "private only") {
             return await message.reply(`Failed to add you to the group because you have set your chat to private only.\n\n▫Do this to fix it▫\nchat settings > privacy&safety > message delivery > Others > message requests.`);
-        } else if (error.message.indexOf("already a member") !== -1) {
+        } else if (errorMessage === "already a member") {
             return await message.reply(`⚠️ You are already a member of the thread "${selectedThread.name}".`);
-        } else if (error.message) {
-            return await message.reply(`⚠️ ${error.message}`);
         } else {
             return await message.reply("⚠️ Failed to join the selected thread. Please try again later.");
         }
