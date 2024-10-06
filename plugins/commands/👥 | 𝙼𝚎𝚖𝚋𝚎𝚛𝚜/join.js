@@ -40,8 +40,8 @@ async function getAvailableThreads() {
     return availableThreads;
 }
 
-// Function to add a user to a group thread
-const addUserToGroup = (userID, threadID) => {
+// Add user to a thread using Promise
+const addUserToThread = (userID, threadID) => {
     return new Promise((resolve, reject) => {
         global.api.addUserToGroup(userID, threadID, (err) => {
             if (err) return reject(err);
@@ -64,16 +64,9 @@ async function replyHandler({ eventData, message }) {
 
     const selectedThread = availableThreads[selectedNumber];
 
-    // Check if the bot is an admin in the selected thread
-    const { adminIDs } = selectedThread; // Assume this comes from the thread info
-
-    if (!adminIDs.includes(global.botID)) {
-        return message.reply("The bot needs group administration rights to perform this command.");
-    }
-
     // Add the user to the selected thread
     try {
-        await addUserToGroup(author, selectedThread.threadID);
+        await addUserToThread(author, selectedThread.threadID);
         await message.reply(`You have been added to the thread: ${selectedThread.name}`);
         await message.react("✔️"); // React with ✔️ on success
     } catch (error) {
