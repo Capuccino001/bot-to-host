@@ -10,15 +10,14 @@ const config = {
 
 const globalPendingRequests = {};
 
-async function onCall({ message, args }) {
-    const { api } = global;
-    const { threadID, author, body } = message;
+async function onCall({ message, args, api }) {
+    const { threadID, authorID, body } = message;
 
     // Fetch available threads only if there's no pending request
     const availableThreads = await getAvailableThreads();
 
     if (availableThreads.length === 0) {
-        return message.reply("No available threads to join.");
+        return api.sendMessage("No available threads to join.", threadID);
     }
 
     // Create a list of available threads with their indexes
@@ -27,45 +26,45 @@ async function onCall({ message, args }) {
         .join('\n');
 
     // Send the available threads list to the user
-    await message.reply(`Available threads:\n${threadListMessage}\n\nReply with the number of the thread you want to join.`);
+    api.sendMessage(`Available threads:\n${threadListMessage}\n\nReply with the number of the thread you want to join.`, threadID);
 
     // Store the pending request for the author
-    globalPendingRequests[author] = availableThreads;
+    globalPendingRequests[authorID] = availableThreads;
 
-    await message.react("🕰️"); // Indicate processing
+    // React to indicate processing
+    api.setMessageReaction("🕰️", message.messageID, true);
 }
 
 // Handle reply events to process the selected thread number
-async function onReply({ message }) {
-    const { api } = global;
-    const { author, body } = message;
+async function onReply({ message, api }) {
+    const { threadID, authorID, body } = message;
 
-    // Check if the message is a reply from the user with a pending request
-    if (globalPendingRequests[author]) {
-        const availableThreads = globalPendingRequests[author];
+    // Check if the user has a pending request
+    if (!globalPendingRequests[authorID]) return;
 
-        // Parse the user's reply to get the selected thread number
-        const selectedNumber = parseInt(body, 10) - 1;
+    const availableThreads = globalPendingRequests[authorID];
 
-        if (!isNaN(selectedNumber) && selectedNumber >= 0 && selectedNumber < availableThreads.length) {
-            const selectedThread = availableThreads[selectedNumber];
+    // Parse the user's reply to get the selected thread number
+    const selectedNumber = parseInt(body.trim(), 10) - 1;
 
-            // Add the user to the selected thread
-            try {
-                await api.addUserToGroup(author, selectedThread.threadID);
-                await message.reply(`You have been added to the thread: ${selectedThread.name}`);
-                await message.react("✔️"); // React with ✅ on success
-            } catch (error) {
-                console.error(error);
-                await message.react("✖️"); // React with ❎ on error
-                await message.reply("⚠️ Failed to join the selected thread. Please try again later.");
-            } finally {
-                // Clear the pending request for the author
-                delete globalPendingRequests[author];
-            }
-        } else {
-            return message.reply("Invalid selection. Please reply with a valid number.");
-        }
+    if (isNaN(selectedNumber) || selectedNumber < 0 || selectedNumber >= availableThreads.length) {
+        return api.sendMessage("Invalid selection. Please reply with a valid number.", threadID);
+    }
+
+    const selectedThread = availableThreads[selectedNumber];
+
+    // Add the user to the selected thread
+    try {
+        await api.addUserToGroup(authorID, selectedThread.threadID);
+        await api.sendMessage(`You have been added to the thread: ${selectedThread.name}`, threadID);
+        await api.setMessageReaction("✔️", message.messageID, true); // React with ✔️ on success
+    } catch (error) {
+        console.error(error);
+        await api.setMessageReaction("✖️", message.messageID, true); // React with ✖️ on error
+        await api.sendMessage("⚠️ Failed to join the selected thread. Please try again later.", threadID);
+    } finally {
+        // Clear the pending request for the author
+        delete globalPendingRequests[authorID];
     }
 }
 
