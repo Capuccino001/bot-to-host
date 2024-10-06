@@ -59,13 +59,15 @@ async function replyHandler({ eventData, message }) {
     // Log the selected thread info for debugging
     console.log('Selected Thread:', selectedThread);
 
-    // Check if the selected thread is full
-    if (selectedThread.membersLength >= 250) {
-        return message.reply(`⚠️ You can't be added to the thread "${selectedThread.name}" as it is already full.`);
-    }
+    // Check if the user is already a member of the selected thread
+    const isAlreadyMember = selectedThread.membersLength >= 250; // Assuming 250 is the max members
 
-    // Add the user to the selected thread
+    // Attempt to add the user to the selected thread
     try {
+        if (isAlreadyMember) {
+            return message.reply(`⚠️ You can't be added to the thread "${selectedThread.name}" as it is already full.`);
+        }
+
         await global.api.addUserToGroup(senderID, selectedThread.threadID); // Use senderID instead of author
         await message.reply(`You have been added to the thread: ${selectedThread.name}`);
         await message.react("✔️"); // React with ✔️ on success
@@ -74,7 +76,11 @@ async function replyHandler({ eventData, message }) {
         await message.react("✖️"); // React with ✖️ on error
 
         // Handle specific error messages
-        if (error.message) {
+        if (error.message.includes("private only")) {
+            return await message.reply(`Failed to add you to the group because you have set your chat to private only.\n\n▫Do this to fix it▫\nchat settings > privacy&safety > message delivery > Others > message requests.`);
+        } else if (error.message.includes("already a member")) {
+            return await message.reply(`⚠️ You are already a member of the thread "${selectedThread.name}".`);
+        } else if (error.message) {
             return await message.reply(`⚠️ ${error.message}`);
         } else {
             return await message.reply("⚠️ Failed to join the selected thread. Please try again later.");
@@ -99,7 +105,7 @@ async function onCall({ message, args }) {
             `│${index + 1}. ${thread.name}\n` +
             `│𝐓𝐈𝐃: ${thread.threadID}\n` +
             `│𝐓𝐨𝐭𝐚𝐥 𝐦𝐞𝐦𝐛𝐞𝐫𝐬: ${thread.membersLength}\n` +
-            `│`).join('\n') +
+            (index === availableThreads.length - 1 ? '' : '│')).join('\n') + // Remove extra line for the last item
         `╰───────────ꔪ\n` +
         `𝐌𝐚𝐱𝐢𝐦𝐮𝐦 𝐌𝐞𝐦𝐛𝐞𝐫𝐬 = 250\n` +
         `𝐎𝐯𝐞𝐫𝐚𝐥𝐥 𝐔𝐬𝐞𝐫𝐬 = ${getTotalUsers(availableThreads)}`;
