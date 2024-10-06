@@ -4,7 +4,7 @@ const config = {
     description: "Get the number of groups and add users to a selected group.",
     usage: "[group number]",
     cooldown: 3,
-    permissions: [1, 2], 
+    permissions: [0], // Allowing access to admins or specific permissions only
     credits: "coffee",
 };
 
@@ -14,16 +14,12 @@ if (!global.onReply) {
 }
 
 async function onCall({ message, global, args }) {
-    if (!global.api) {
-        console.error("API is not defined in global context.");
-        await message.reply("⚠️ An error occurred: API is not available.");
-        return;
-    }
+    const { Threads, Users } = global.controllers; // Accessing the controllers
 
     try {
         // Fetch up to 20 threads (group chats) from the inbox
-        const groupList = await global.api.getThreadList(20, null, ['INBOX']);
-        
+        const groupList = await Threads.getThreadList(20, null, ['INBOX']);
+
         if (groupList.length === 0) {
             await message.reply('No group chats available.');
             return;
@@ -34,7 +30,7 @@ async function onCall({ message, global, args }) {
             const formattedList = groupList.map((group, index) => 
                 `│${index + 1}. ${group.threadName}\n│𝐓𝐈𝐃: ${group.threadID}\n│𝐌𝐞𝐦𝐛𝐞𝐫𝐬: ${group.participantIDs.length}`
             );
-            
+
             const totalGroups = groupList.length;
             const totalUsers = groupList.reduce((total, group) => total + group.participantIDs.length, 0);
 
@@ -67,7 +63,8 @@ async function onCall({ message, global, args }) {
             const selectedGroup = groupList[groupIndex - 1];
             const groupID = selectedGroup.threadID;
 
-            const memberList = await global.api.getThreadInfo(groupID);
+            // Get thread info using the Threads controller
+            const memberList = await Threads.getThreadInfo(groupID);
 
             // Check if the user is already in the group
             if (memberList.participantIDs.includes(message.senderID)) {
@@ -82,7 +79,7 @@ async function onCall({ message, global, args }) {
             }
 
             // Add the user to the group
-            await global.api.addUserToGroup(message.senderID, groupID);
+            await Threads.addUserToGroup(message.senderID, groupID);
             await message.reply(`You've successfully joined the group chat: ${selectedGroup.threadName}`);
         }
     } catch (error) {
