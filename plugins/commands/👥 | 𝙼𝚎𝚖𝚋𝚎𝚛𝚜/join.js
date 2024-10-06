@@ -14,46 +14,13 @@ async function onCall({ message, args }) {
     const { api } = global;
     const { threadID, author, body } = message;
 
-    // Check if the user has provided a number as an argument
-    const selectedNumber = args[0] ? parseInt(args[0], 10) - 1 : null;
+    // Check if an argument was provided
+    if (args.length > 0) {
+        const selectedNumber = parseInt(args[0], 10) - 1;
 
-    // If the user provided a number and there are no pending requests
-    if (selectedNumber !== null && !globalPendingRequests[author]) {
-        const availableThreads = await getAvailableThreads();
-
-        if (availableThreads.length === 0) {
-            return message.reply("No available threads to join.");
-        }
-
-        // Validate the selected number
-        if (!isNaN(selectedNumber) && selectedNumber >= 0 && selectedNumber < availableThreads.length) {
-            const selectedThread = availableThreads[selectedNumber];
-
-            // Add the user to the selected thread
-            try {
-                await api.addUserToGroup(author, selectedThread.threadID);
-                await message.reply(`You have been added to the thread: ${selectedThread.name}`);
-                await message.react("✔️"); // React with ✅ on success
-            } catch (error) {
-                console.error(error);
-                await message.react("✖️"); // React with ❎ on error
-                await message.reply("⚠️ Failed to join the selected thread. Please try again later.");
-            }
-            return; // Exit the function after processing the join request
-        } else {
-            return message.reply("Invalid selection. Please reply with a valid number or use 'join [number]'.");
-        }
-    }
-
-    // Check if the message is a reply from the user
-    if (globalPendingRequests[author]) {
-        const availableThreads = globalPendingRequests[author];
-
-        // Parse the user's reply to get the selected thread number
-        const selectedNumberFromReply = parseInt(body, 10) - 1;
-
-        if (!isNaN(selectedNumberFromReply) && selectedNumberFromReply >= 0 && selectedNumberFromReply < availableThreads.length) {
-            const selectedThread = availableThreads[selectedNumberFromReply];
+        // Check for valid input and if there's a pending request
+        if (!isNaN(selectedNumber) && selectedNumber >= 0 && globalPendingRequests[author] && selectedNumber < globalPendingRequests[author].length) {
+            const selectedThread = globalPendingRequests[author][selectedNumber];
 
             // Add the user to the selected thread
             try {
@@ -70,11 +37,15 @@ async function onCall({ message, args }) {
             }
             return; // Exit the function after processing the join request
         } else {
-            return message.reply("Invalid selection. Please reply with a valid number.");
+            return message.reply("Invalid selection. Please provide a valid thread number.");
         }
     }
 
-    // Fetch available threads only if there's no pending request
+    // Handle the case when no arguments are provided and fetch available threads
+    if (globalPendingRequests[author]) {
+        return message.reply("You already have a pending request. Please reply with the thread number or use the command format.");
+    }
+
     const availableThreads = await getAvailableThreads();
 
     if (availableThreads.length === 0) {
@@ -87,7 +58,7 @@ async function onCall({ message, args }) {
         .join('\n');
 
     // Send the available threads list to the user
-    await message.reply(`Available threads:\n${threadListMessage}\n\nReply with the number of the thread you want to join or use 'join [number]'.`);
+    await message.reply(`Available threads:\n${threadListMessage}\n\nReply with the number of the thread you want to join, or use the command format (join 1, join 2, etc.).`);
 
     // Store the pending request for the author
     globalPendingRequests[author] = availableThreads;
