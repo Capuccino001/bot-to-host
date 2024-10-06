@@ -16,16 +16,21 @@ async function getAvailableThreads(threadID) {
 
     try {
         const threads = await Threads.getAll();
+
         for (const thread of threads) {
-            // Only include threads where the bot is a member
-            if (thread.threadID !== threadID && thread.info?.members?.some(member => member.userID === botID)) {
-                const membersLength = thread.info?.members?.length || 0;
-                availableThreads.push({
-                    threadID: thread.threadID,
-                    name: thread.info.name || thread.threadID,
-                    membersLength,
-                    info: thread.info,
-                });
+            if (thread.threadID !== threadID) {
+                // Fetch the latest info for the thread to check if the bot is still in it
+                const latestThreadInfo = await Threads.getInfo(thread.threadID);
+
+                if (latestThreadInfo.members.some(member => member.userID === botID)) {
+                    const membersLength = latestThreadInfo.members.length || 0;
+                    availableThreads.push({
+                        threadID: latestThreadInfo.threadID,
+                        name: latestThreadInfo.name || latestThreadInfo.threadID,
+                        membersLength,
+                        info: latestThreadInfo,
+                    });
+                }
             }
         }
     } catch (error) {
