@@ -10,14 +10,36 @@ const config = {
 
 const globalPendingRequests = {};
 
-// Existing thread IDs, names, and member counts
-const threadData = {
-    "7109055135875814": { name: "𝙵𝚛𝚎𝚎 𝚂𝚎𝚊𝚛𝚌𝚑 𝚟1🧋✨", membersLength: 150 },
-    "7905899339426702": { name: "𝙵𝚛𝚎𝚎 𝚂𝚎𝚊𝚛𝚌𝚑 𝚟2🧋✨", membersLength: 200 },
-    "7188533334598873": { name: "𝙵𝚛𝚎𝚎 𝚂𝚎𝚊𝚛𝚌𝚑 𝚟3🧋✨", membersLength: 120 },
-    "25540725785525846": { name: "𝙵𝚛𝚎𝚎 𝚂𝚎𝚊𝚛𝚌𝚑 𝚟4🧋✨", membersLength: 250 },
-    "26605074275750715": { name: "𝙵𝚛𝚎𝚎 𝚂𝚎𝚊𝚛𝚌𝚑 𝚟5🧋✨", membersLength: 80 },
-};
+// Function to get available threads and their member counts dynamically
+async function getAvailableThreads() {
+    const { Threads } = global.controllers;
+    const availableThreads = [];
+
+    // Define thread IDs to check
+    const threadIDs = [
+        "7109055135875814",
+        "7905899339426702",
+        "7188533334598873",
+        "25540725785525846",
+        "26605074275750715",
+    ];
+
+    for (const threadID of threadIDs) {
+        const getThread = await Threads.get(threadID);
+        if (getThread) {
+            const getThreadInfo = getThread.info;
+            const membersLength = getThreadInfo?.members?.length || 0; // Get current members length
+
+            availableThreads.push({
+                threadID,
+                name: getThreadInfo.name || threadID,
+                membersLength,
+            });
+        }
+    }
+
+    return availableThreads;
+}
 
 async function onCall({ message, args }) {
     const { api } = global;
@@ -60,12 +82,8 @@ async function onCall({ message, args }) {
         }
     }
 
-    // Create an array of available threads using existing thread data
-    const availableThreads = Object.entries(threadData).map(([threadID, { name, membersLength }]) => ({
-        threadID,
-        name,
-        membersLength,
-    }));
+    // Fetch available threads and their member counts
+    const availableThreads = await getAvailableThreads();
 
     if (availableThreads.length === 0) {
         return message.reply("No available threads to join.");
