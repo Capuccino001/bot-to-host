@@ -11,6 +11,7 @@ export default async function ({ event }) {
     const { Threads, Users } = global.controllers;
 
     const getThread = await Threads.get(threadID);
+
     if (getThread == null) return;
 
     const getThreadData = getThread.data;
@@ -18,25 +19,22 @@ export default async function ({ event }) {
 
     const oldImage = getThreadInfo.imageSrc || null;
     const isBot = author == botID;
-    const defaultImage = "https://i.ibb.co/kKbY0Fv/quality-restoration-20241001081241592.jpg"; // Default image URL
 
     let reversed = true,
         alertMsg = null;
 
+    const defaultImage = "https://i.ibb.co/kKbY0Fv/quality-restoration-20241001081241592.jpg";
+
     if (
         getThreadData.antiSettings &&
-        getThreadData.antiSettings.antiChangeGroupImage === true &&
+        getThreadData.antiSettings.antiChangeGroupImage == true &&
         oldImage
     ) {
         const isReversing = global.data.temps.some(
-            (i) => i.type === "antiChangeGroupImage" && i.threadID === threadID
+            (i) => i.type == "antiChangeGroupImage" && i.threadID == threadID
         );
 
-        if (!isBot && isReversing) {
-            // Avoid further processing if already reversing
-            return;
-        }
-
+        if (!isBot && isReversing); // might bug
         if (!isBot && !isReversing) {
             global.data.temps.push({ type: "antiChangeGroupImage", threadID });
 
@@ -46,7 +44,7 @@ export default async function ({ event }) {
                 );
                 let builtUrl = utils.buildURL(oldImage);
                 if (builtUrl == null) {
-                    // Handle base64 image, if deprecated
+                    // possible base64 image, deprecated
                     logger.warn(
                         global.getLang(
                             "plugins.events.change_thread_image.unsupported",
@@ -55,15 +53,18 @@ export default async function ({ event }) {
                             }
                         )
                     );
+                    // backwards compatibility, save base64 image to file and save path to database
                     const imgPath = join(global.tPath, `${threadID}.jpg`);
                     await utils.saveFromBase64(imgPath, oldImage);
+
                     getThreadData.imageSrc = imgPath;
+
                     builtUrl = utils.buildURL(oldImage);
                 }
 
                 const isLocal =
-                    builtUrl.protocol !== "http:" &&
-                    builtUrl.protocol !== "https:";
+                    builtUrl.protocol != "http:" &&
+                    builtUrl.protocol != "https:";
                 if (!isLocal) {
                     await utils.downloadFile(imagePath, builtUrl.href);
                 }
@@ -77,12 +78,12 @@ export default async function ({ event }) {
 
                 const tempIndex = global.data.temps.findIndex((e) => {
                     return (
-                        e.type === "antiChangeGroupImage" &&
-                        e.threadID === threadID
+                        e.type == "antiChangeGroupImage" &&
+                        e.threadID == threadID
                     );
                 });
 
-                if (tempIndex !== -1) {
+                if (tempIndex != -1) {
                     global.data.temps.splice(tempIndex, 1);
                 }
 
@@ -94,20 +95,14 @@ export default async function ({ event }) {
             }
         }
     } else {
-        // New image URL handling
         const newImageURL = event.logMessageData.image.url;
         try {
-            if (newImageURL == null) {
-                // Revert to default image if the user removed the image
-                await Threads.updateInfo(threadID, { imageSrc: defaultImage });
-                await api.changeGroupImage(defaultImage, threadID);
-                alertMsg = global.getLang("plugins.events.change_thread_image.defaultSet");
-            } else {
-                const imagePath = utils.buildCachePath(
-                    `${threadID}_${Date.now()}_oldImage.jpg`
-                );
+            const imagePath = utils.buildCachePath(
+                `${threadID}_${Date.now()}_oldImage.jpg`
+            );
 
-                let imgToSave = null;
+            let imgToSave = null;
+            if (newImageURL != null) {
                 if (process.env.IMGBB_KEY) {
                     imgToSave = await utils
                         .uploadImgbb(newImageURL)
@@ -122,13 +117,21 @@ export default async function ({ event }) {
                 if (!imgToSave) {
                     const imgPath = join(global.tPath, `${threadID}.jpg`);
                     await utils.downloadFile(imgPath, newImageURL);
+
                     imgToSave = imgPath;
                 }
+            } else {
+                imgToSave = defaultImage;
+            }
 
-                await Threads.updateInfo(threadID, { imageSrc: imgToSave });
-                if (utils.isExists(imagePath, "file")) {
-                    utils.deleteFile(imagePath);
-                }
+            if (reversed) {
+                imgToSave = defaultImage;
+            }
+
+            await Threads.updateInfo(threadID, { imageSrc: imgToSave });
+
+            if (utils.isExists(imagePath, "file")) {
+                utils.deleteFile(imagePath);
             }
         } catch (err) {
             console.error(
@@ -137,7 +140,6 @@ export default async function ({ event }) {
         }
     }
 
-    // Notify users if the image was reverted
     if (
         oldImage &&
         reversed &&
@@ -152,7 +154,7 @@ export default async function ({ event }) {
     if (!isBot && getThreadData.notifyChange?.status === true) {
         const authorName = (await Users.getInfo(author))?.name || author;
         alertMsg = getLang(
-            "plugins.events.change_thread_image.userChangedThreadImage",
+                        "plugins.events.change_thread_image.userChangedThreadImage",
             {
                 author: authorName,
             }
@@ -175,3 +177,4 @@ export default async function ({ event }) {
 
     return;
 }
+
