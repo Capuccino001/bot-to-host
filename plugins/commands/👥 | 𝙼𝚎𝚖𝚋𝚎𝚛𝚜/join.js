@@ -62,9 +62,9 @@ async function replyHandler({ eventData, message }) {
             await message.react("✖️"); // React with ❎ on error
 
             // Handle specific error messages
-            if (error.message.includes("already in the group")) {
+            if (error.message.reply("already in the group")) {
                 return await message.reply("⚠️ You are already in this group.");
-            } else if (error.message.includes("cannot be added")) {
+            } else if (error.message.reply("cannot be added")) {
                 return await message.reply("⚠️ You cannot be added to this group at the moment.");
             } else {
                 return await message.reply("⚠️ Failed to join the selected thread. Please try again later.");
