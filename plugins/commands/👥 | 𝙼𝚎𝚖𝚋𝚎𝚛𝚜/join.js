@@ -60,12 +60,18 @@ async function onCall({ message, args }) {
         }
     }
 
-    // Create an array of available threads using existing thread data
-    const availableThreads = Object.entries(threadData).map(([threadID, name]) => ({
-        threadID,
-        name,
-        members: [] // Placeholder for member count if needed
-    }));
+    // Create an array of available threads using existing thread data and fetching member counts
+    const availableThreads = await Promise.all(
+        Object.entries(threadData).map(async ([threadID, name]) => {
+            // Fetch the member count for the current thread
+            const members = await api.getGroupMembers(threadID); // Assume this function returns the members of the group
+            return {
+                threadID,
+                name,
+                membersLength: members.length // Get the number of members in the thread
+            };
+        })
+    );
 
     if (availableThreads.length === 0) {
         return message.reply("No available threads to join.");
@@ -76,7 +82,7 @@ async function onCall({ message, args }) {
         availableThreads.map((thread, index) => 
             `│${index + 1}. ${thread.name}\n` +
             `│𝐓𝐈𝐃: ${thread.threadID}\n` +
-            `│𝐓𝐨𝐭𝐚𝐥 𝐦𝐞𝐦𝐛𝐞𝐫𝐬: ${thread.members.length}\n` +
+            `│𝐓𝐨𝐭𝐚𝐥 𝐦𝐞𝐦𝐛𝐞𝐫𝐬: ${thread.membersLength}\n` +
             `│`).join('\n') +
         `╰───────────ꔪ\n` +
         `𝐌𝐚𝐱𝐢𝐦𝐮𝐦 𝐌𝐞𝐦𝐛𝐞𝐫𝐬 = 250\n` +
@@ -93,7 +99,7 @@ async function onCall({ message, args }) {
 
 // Helper function to calculate total users across all available threads
 function getTotalUsers(threads) {
-    return threads.reduce((acc, thread) => acc + thread.members.length, 0);
+    return threads.reduce((acc, thread) => acc + thread.membersLength, 0);
 }
 
 // Exporting the command
