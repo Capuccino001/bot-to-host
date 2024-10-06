@@ -40,20 +40,13 @@ async function getAvailableThreads() {
     return availableThreads;
 }
 
-// Add user to a thread using Promise
-const addUserToThread = (userID, threadID) => {
-    return new Promise((resolve, reject) => {
-        global.api.addUserToGroup(userID, threadID, (err) => {
-            if (err) return reject(err);
-            resolve();
-        });
-    });
-};
-
 // Reply handler to process user’s thread selection
 async function replyHandler({ eventData, message }) {
-    const { body, author } = message;
+    const { body, senderID } = message; // Use senderID directly
     const availableThreads = eventData.availableThreads;
+
+    // Log the senderID to ensure it is defined
+    console.log('Sender ID:', senderID);
 
     // Parse the user's reply to get the selected thread number
     const selectedNumber = parseInt(body, 10) - 1;
@@ -64,13 +57,21 @@ async function replyHandler({ eventData, message }) {
 
     const selectedThread = availableThreads[selectedNumber];
 
+    // Ensure senderID is a valid user ID
+    if (!senderID) {
+        return message.reply("⚠️ Could not retrieve your user ID.");
+    }
+
+    // Log the selected thread info for debugging
+    console.log('Selected Thread:', selectedThread);
+
     // Add the user to the selected thread
     try {
-        await addUserToThread(author, selectedThread.threadID);
+        await global.api.addUserToGroup(senderID, selectedThread.threadID); // Use senderID instead of author
         await message.reply(`You have been added to the thread: ${selectedThread.name}`);
         await message.react("✔️"); // React with ✔️ on success
     } catch (error) {
-        console.error(error);
+        console.error('Error adding user:', error);
         await message.react("✖️"); // React with ✖️ on error
 
         // Handle specific error messages
@@ -84,7 +85,7 @@ async function replyHandler({ eventData, message }) {
 
 async function onCall({ message, args }) {
     const { api } = global;
-    const { author } = message;
+    const { senderID } = message;
 
     // Fetch available threads and their member counts
     const availableThreads = await getAvailableThreads();
