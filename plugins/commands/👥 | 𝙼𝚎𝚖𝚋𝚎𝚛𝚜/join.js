@@ -24,7 +24,7 @@ async function getAvailableThreads(threadID) {
                     threadID: thread.threadID,
                     name: thread.info.name || thread.threadID,
                     membersLength,
-                    members: thread.info?.members || [] // Include the members list
+                    info: thread.info, // Include thread info to access members list later
                 });
             }
         }
@@ -61,10 +61,10 @@ async function replyHandler({ eventData, message }) {
     console.log('Selected Thread:', selectedThread);
 
     // Check if the user is already a member of the selected thread
-    const isAlreadyMember = selectedThread.members.includes(senderID);
+    const isAlreadyMember = selectedThread.info.members.some(member => member.userID === senderID);
 
     if (isAlreadyMember) {
-        return message.reply(`⚠️ You are already a member of the thread "${selectedThread.name}".`);
+        return message.reply(`⚠️ You are already a member of the thread "${selectedThread.name}". You cannot join again.`);
     }
 
     // Check for maximum members
@@ -80,9 +80,6 @@ async function replyHandler({ eventData, message }) {
     } catch (error) {
         console.error('Error adding user:', error);
         await message.react("✖️"); // React with ✖️ on error
-
-        // Fallback error handling without specific messages
-        return await message.reply("⚠️ Failed to join the selected thread. Please try again later.");
     }
 }
 
