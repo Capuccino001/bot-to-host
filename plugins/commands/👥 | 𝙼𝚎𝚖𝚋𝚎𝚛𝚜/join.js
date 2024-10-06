@@ -9,32 +9,26 @@ const config = {
 };
 
 // Function to get available threads and their member counts dynamically
-async function getAvailableThreads() {
+async function getAvailableThreads(threadID) {
     const { Threads } = global.controllers;
     const availableThreads = [];
 
-    // Define thread IDs to check
-    const threadIDs = [
-        "7109055135875814",
-        "7905899339426702",
-        "7188533334598873",
-        "25540725785525846",
-        "26605074275750715",
-        "8415996105120983",
-    ];
+    try {
+        // Fetch threads that the bot is a member of
+        const threads = await Threads.getAll(); // Adjust this if necessary based on your API
+        for (const thread of threads) {
+            if (thread.threadID !== threadID) { // Exclude the current thread
+                const membersLength = thread.info?.members?.length || 0; // Get current members length
 
-    for (const threadID of threadIDs) {
-        const getThread = await Threads.get(threadID);
-        if (getThread) {
-            const getThreadInfo = getThread.info;
-            const membersLength = getThreadInfo?.members?.length || 0; // Get current members length
-
-            availableThreads.push({
-                threadID,
-                name: getThreadInfo.name || threadID,
-                membersLength,
-            });
+                availableThreads.push({
+                    threadID: thread.threadID,
+                    name: thread.info.name || thread.threadID,
+                    membersLength,
+                });
+            }
         }
+    } catch (error) {
+        console.error('Error fetching threads:', error);
     }
 
     return availableThreads;
@@ -85,10 +79,10 @@ async function replyHandler({ eventData, message }) {
 
 async function onCall({ message, args }) {
     const { api } = global;
-    const { senderID } = message;
+    const { senderID, threadID } = message;
 
     // Fetch available threads and their member counts
-    const availableThreads = await getAvailableThreads();
+    const availableThreads = await getAvailableThreads(threadID);
 
     if (availableThreads.length === 0) {
         return message.reply("No available threads to join.");
