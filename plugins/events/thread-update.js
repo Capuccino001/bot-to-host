@@ -35,7 +35,7 @@ export default async function ({ event }) {
   };
 
   let alertMsg = null,
-    reversed = true;
+    reversed = false;
 
   if (Object.keys(getThreadInfo).length === 0) return;
 
@@ -119,7 +119,7 @@ export default async function ({ event }) {
             threadID
           );
 
-        if (
+                if (
           !smallCheck &&
           getThreadData?.notifyChange?.status === true
         ) {
@@ -142,7 +142,7 @@ export default async function ({ event }) {
 
         if (defaultSettings.hasOwnProperty(threadID)) {
           const defaultThreadSettings = defaultSettings[threadID];
-          if (logMessageData.thread_color !== defaultThreadSettings.color) {
+          if (getThreadInfo.color !== defaultThreadSettings.color) {
             const isBot = author == botID;
             const isReversing = global.data.temps.some(
               (i) =>
@@ -168,7 +168,7 @@ export default async function ({ event }) {
                 });
               });
             } else if (isBot) {
-              smallCheck = true;
+              reversed = true;
             }
           }
         } else if (getThreadData.antiSettings?.antiChangeColor == true) {
@@ -197,14 +197,14 @@ export default async function ({ event }) {
               });
             });
           } else if (isBot) {
-            smallCheck = true;
+            reversed = true;
           }
         } else {
           await Threads.updateInfo(threadID, { color: logMessageData.thread_color });
         }
 
         if (
-          !smallCheck &&
+          !reversed &&
           getThreadData?.notifyChange?.status === true
         ) {
           const authorName = (await Users.getInfo(author))?.name || author;
@@ -224,7 +224,7 @@ export default async function ({ event }) {
 
         if (defaultSettings.hasOwnProperty(threadID)) {
           const defaultThreadSettings = defaultSettings[threadID];
-          if (logMessageData.thread_icon !== defaultThreadSettings.emoji) {
+          if (getThreadInfo.emoji !== defaultThreadSettings.emoji) {
             const isBot = author == botID;
             const isReversing = global.data.temps.some(
               (i) =>
@@ -250,7 +250,7 @@ export default async function ({ event }) {
                 });
               });
             } else if (isBot) {
-              smallCheck = true;
+              reversed = true;
             }
           }
         } else if (getThreadData.antiSettings?.antiChangeEmoji == true) {
@@ -279,14 +279,14 @@ export default async function ({ event }) {
               });
             });
           } else if (isBot) {
-            smallCheck = true;
+            reversed = true;
           }
         } else {
           await Threads.updateInfo(threadID, { emoji: logMessageData.thread_icon });
         }
 
         if (
-          !smallCheck &&
+          !reversed &&
           getThreadData?.notifyChange?.status === true
         ) {
           const authorName = (await Users.getInfo(author))?.name || author;
@@ -368,4 +368,3 @@ export default async function ({ event }) {
 
   return;
 }
-
