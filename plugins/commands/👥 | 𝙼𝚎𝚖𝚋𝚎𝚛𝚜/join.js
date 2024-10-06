@@ -94,7 +94,7 @@ async function onCall({ message, args }) {
             `│${index + 1}. ${thread.name}\n` +
             `│𝐓𝐈𝐃: ${thread.threadID}\n` +
             `│𝐓𝐨𝐭𝐚𝐥 𝐦𝐞𝐦𝐛𝐞𝐫𝐬: ${thread.membersLength}\n` +
-            `│`).join('\n') +
+            `│\n' +
         `╰───────────ꔪ\n` +
         `𝐌𝐚𝐱𝐢𝐦𝐮𝐦 𝐌𝐞𝐦𝐛𝐞𝐫𝐬 = 250\n` +
         `𝐎𝐯𝐞𝐫𝐚𝐥𝐥 𝐔𝐬𝐞𝐫𝐬 = ${getTotalUsers(availableThreads)}`;
