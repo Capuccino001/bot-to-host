@@ -14,7 +14,8 @@ async function getAvailableThreads(threadID) {
     const availableThreads = [];
 
     try {
-        const threads = await Threads.getAll(); // Fetch threads that the bot is a member of
+        // Fetch threads that the bot is a member of
+        const threads = await Threads.getAll(); // Adjust this if necessary based on your API
         for (const thread of threads) {
             if (thread.threadID !== threadID) { // Exclude the current thread
                 const membersLength = thread.info?.members?.length || 0; // Get current members length
@@ -28,7 +29,6 @@ async function getAvailableThreads(threadID) {
         }
     } catch (error) {
         console.error('Error fetching threads:', error);
-        return message.reply("Error listing group chats"); // Error message 1
     }
 
     return availableThreads;
@@ -36,18 +36,17 @@ async function getAvailableThreads(threadID) {
 
 // Reply handler to process user’s thread selection
 async function replyHandler({ eventData, message }) {
-    const { body, senderID } = message;
+    const { body, senderID } = message; // Use senderID directly
     const availableThreads = eventData.availableThreads;
+
+    // Log the senderID to ensure it is defined
+    console.log('Sender ID:', senderID);
 
     // Parse the user's reply to get the selected thread number
     const selectedNumber = parseInt(body, 10) - 1;
 
-    if (isNaN(selectedNumber)) {
-        return message.reply("Invalid input"); // Error message 3
-    }
-
-    if (selectedNumber < 0 || selectedNumber >= availableThreads.length) {
-        return message.reply("Invalid group number"); // Error message 4
+    if (isNaN(selectedNumber) || selectedNumber < 0 || selectedNumber >= availableThreads.length) {
+        return message.reply("Invalid selection. Please reply with a valid number.");
     }
 
     const selectedThread = availableThreads[selectedNumber];
@@ -57,62 +56,55 @@ async function replyHandler({ eventData, message }) {
         return message.reply("⚠️ Could not retrieve your user ID.");
     }
 
+    // Log the selected thread info for debugging
+    console.log('Selected Thread:', selectedThread);
+
+    // Add the user to the selected thread
     try {
-        // Attempt to add the user to the selected thread
-        await global.api.addUserToGroup(senderID, selectedThread.threadID); 
-
-        // Success message
+        await global.api.addUserToGroup(senderID, selectedThread.threadID); // Use senderID instead of author
         await message.reply(`You have been added to the thread: ${selectedThread.name}`);
-        await message.react("✔️"); 
-
+        await message.react("✔️"); // React with ✔️ on success
     } catch (error) {
         console.error('Error adding user:', error);
-        await message.react("✖️"); 
+        await message.react("✖️"); // React with ✖️ on error
 
-        const errorMessages = {
-            "User already in the group": "User already in the group", // Error message 5
-            "Group chat is full": "Group chat is full", // Error message 6
-            "Private chat settings": `Private chat settings\n\nFailed to add you to the group because you have set your chat to private only.\n\n▫Do this to fix it▫\nchat settings > privacy&safety > message delivery > Others > message requests.`, // Error message 8
-        };
-
-        // Fallback to a generic message if no specific error is found
-        return message.reply(errorMessages[error.message] || `Additional error message: ${error.message}`); // Error message 9
+        // Handle specific error messages
+        if (error.message) {
+            return await message.reply(`⚠️ ${error.message}`);
+        } else {
+            return await message.reply("⚠️ Failed to join the selected thread. Please try again later.");
+        }
     }
 }
 
 async function onCall({ message, args }) {
+    const { api } = global;
     const { senderID, threadID } = message;
 
-    try {
-        // Fetch available threads
-        const availableThreads = await getAvailableThreads(threadID);
+    // Fetch available threads and their member counts
+    const availableThreads = await getAvailableThreads(threadID);
 
-        if (availableThreads.length === 0) {
-            return message.reply("No group chats found"); // Error message 2
-        }
-
-        // Create a formatted list of available threads with spaces between each, and remove the extra space above the arrow
-        const threadListMessage = `𝐋𝐢𝐬𝐭 𝐨𝐟 𝐠𝐫𝐨𝐮𝐩 𝐜𝐡𝐚𝐭𝐬:\n╭─╮\n` +
-            availableThreads.map((thread, index) =>
-                `│${index + 1}. ${thread.name}\n` +
-                `│𝐓𝐈𝐃: ${thread.threadID}\n` +
-                `│𝐓𝐨𝐭𝐚𝐥 𝐦𝐞𝐦𝐛𝐞𝐫𝐬: ${thread.membersLength}`
-            ).join('\n│\n') +
-            `\n╰───────────ꔪ\n` +
-            `𝐌𝐚𝐱𝐢𝐦𝐮𝐦 𝐌𝐞𝐦𝐛𝐞𝐫𝐬 = 250\n` +
-            `𝐎𝐯𝐞𝐫𝐚𝐥𝐥 𝐔𝐬𝐞𝐫𝐬 = ${getTotalUsers(availableThreads)}`;
-
-        // Send the available threads list to the user
-        await message.reply(`${threadListMessage}\n\nReply to this message with the number of the group you want to join (1, 2, 3, 4...).`).then(msg => {
-            msg.addReplyEvent({ callback: replyHandler, type: "message", availableThreads });
-        });
-
-        await message.react("🕰️"); 
-
-    } catch (error) {
-        // Handle the error if something goes wrong during the call
-        return message.reply("Error joining group chat"); // Error message 7
+    if (availableThreads.length === 0) {
+        return message.reply("No available threads to join.");
     }
+
+    // Create a formatted list of available threads
+    const threadListMessage = `𝐋𝐢𝐬𝐭 𝐨𝐟 𝐠𝐫𝐨𝐮𝐩 𝐜𝐡𝐚𝐭𝐬:\n╭─╮\n` +
+        availableThreads.map((thread, index) => 
+            `│${index + 1}. ${thread.name}\n` +
+            `│𝐓𝐈𝐃: ${thread.threadID}\n` +
+            `│𝐓𝐨𝐭𝐚𝐥 𝐦𝐞𝐦𝐛𝐞𝐫𝐬: ${thread.membersLength}\n` +
+            `│`).join('\n') +
+        `╰───────────ꔪ\n` +
+        `𝐌𝐚𝐱𝐢𝐦𝐮𝐦 𝐌𝐞𝐦𝐛𝐞𝐫𝐬 = 250\n` +
+        `𝐎𝐯𝐞𝐫𝐚𝐥𝐥 𝐔𝐬𝐞𝐫𝐬 = ${getTotalUsers(availableThreads)}`;
+
+    // Send the available threads list to the user and add a reply event
+    await message.reply(`${threadListMessage}\n\nReply to this message with the number of the group you want to join (1, 2, 3, 4...).`).then(msg => {
+        msg.addReplyEvent({ callback: replyHandler, type: "message", availableThreads });
+    });
+
+    await message.react("🕰️"); // Indicate processing
 }
 
 // Helper function to calculate total users across all available threads
