@@ -8,13 +8,16 @@ const config = {
     credits: "Coffee",
 };
 
-async function getAvailableThreads(threadID, botID) {
+const botID = "61565876685722"; // Bot's UID
+
+async function getAvailableThreads(threadID) {
     const { Threads } = global.controllers;
     const availableThreads = [];
 
     try {
         const threads = await Threads.getAll();
         for (const thread of threads) {
+            // Only include threads where the bot is a member
             if (thread.threadID !== threadID && thread.info?.members?.some(member => member.userID === botID)) {
                 const membersLength = thread.info?.members?.length || 0;
                 availableThreads.push({
@@ -72,9 +75,7 @@ async function onCall({ message, args }) {
     const { api } = global;
     const { senderID, threadID } = message;
 
-    // Assuming botID is globally available or can be fetched from api
-    const botID = api.getCurrentUserID();
-    const availableThreads = await getAvailableThreads(threadID, botID);
+    const availableThreads = await getAvailableThreads(threadID);
 
     if (availableThreads.length === 0) {
         return message.reply("No available threads to join.");
