@@ -1,67 +1,93 @@
-import getCThread from '../core/var/controllers/thread.js'; // Correct path to thread.js
+const config = {
+    name: "join",
+    aliases: ["joinGroup", "joinThread"],
+    description: "Join a specified group or thread.",
+    usage: "[thread ID]",
+    cooldown: 3,
+    permissions: [1, 2],
+    credits: "Coffee",
+};
+
+async function onCall({ message, args }) {
+    const threadID = args[0]; // Assume the first argument is the thread ID
+
+    if (!threadID) {
+        // No thread ID provided, list available threads to join
+        const availableThreads = await global.controllers.Threads.getAvailableThreads(); // Example: This function should return available threads
+
+        if (!availableThreads || availableThreads.length === 0) {
+            return message.reply("⚠️ No available threads to join.");
+        }
+
+        // Build a list of threads with corresponding numbers
+        const threadList = availableThreads
+            .map((thread, index) => `${index + 1}. ${thread.threadName || thread.id}`)
+            .join("\n");
+
+        // Ask the user to reply with the thread number
+        await message.reply(`Please reply with the number of the thread you'd like to join:\n${threadList}`);
+
+        // Wait for the user to reply with a number
+        const filter = (response) => response.sender.id === message.sender.id && /^\d+$/.test(response.body);
+        const collected = await global.controllers.Messages.awaitMessage(filter, { time: 30000 }); // 30 seconds to reply
+
+        if (!collected) {
+            return message.reply("⚠️ No response received. Please try the command again.");
+        }
+
+        const threadIndex = parseInt(collected.body, 10) - 1;
+
+        if (threadIndex < 0 || threadIndex >= availableThreads.length) {
+            return message.reply("⚠️ Invalid thread number. Please try again.");
+        }
+
+        const selectedThreadID = availableThreads[threadIndex].id;
+
+        // Continue to join the selected thread
+        await joinThread(message, selectedThreadID);
+    } else {
+        // If a thread ID was provided, proceed to join that thread directly
+        await joinThread(message, threadID);
+    }
+}
+
+// Helper function to handle the joining process
+async function joinThread(message, threadID) {
+    await message.react("🕰️"); // Indicate processing
+
+    try {
+        // Fetch thread info from the API
+        const threadInfo = await global.controllers.Threads.getInfoAPI(threadID);
+
+        if (!threadInfo) {
+            await message.react("✖️"); // React with ❎ on error
+            return message.reply("⚠️ Failed to retrieve thread information.");
+        }
+
+        // Update user data to add this thread
+        const userID = message.sender.id;
+        const userInfo = await global.controllers.Users.getInfo(userID);
+
+        if (!userInfo) {
+            await message.react("✖️");
+            return message.reply("⚠️ User information could not be retrieved.");
+        }
+
+        // Add user to the thread
+        await global.controllers.Threads.updateInfo(threadID, {
+            participantIDs: [...(threadInfo.participantIDs || []), userID],
+        });
+
+        await message.reply(`✅ You have successfully joined the thread: ${threadInfo.threadName || threadID}`);
+        await message.react("✔️"); // React with ✅ on success
+    } catch (error) {
+        console.error(error);
+        await message.react("✖️"); // React with ❎ on error
+        await message.reply("⚠️ An error occurred while trying to join the thread.");
+    }
+}
 
 export default {
-    config: {
-        name: 'join',
-        aliases: ['adduser'],
-        permissions: [1, 2],
-    },
-
-    async onCall({ event, args, database, api }) {
-        const { threadID, senderID, messageID } = event;
-        const mention = Object.keys(event.mentions)[0];
-
-        // Ensure a user is mentioned
-        if (!mention) {
-            return api.sendMessage("Please mention a user to add.", threadID, messageID);
-        }
-
-        // Fetch the thread controllers from thread.js
-        const { getAll } = getCThread(database, api);
-
-        // Fetch the list of threads the bot is a part of
-        const allThreads = getAll();
-        if (!allThreads || allThreads.length === 0) {
-            return api.sendMessage("No threads available for adding users.", threadID, messageID);
-        }
-
-        // List all threads for user selection
-        let threadListMsg = "Please reply with the number of the thread to add the user:\n";
-        allThreads.forEach((thread, index) => {
-            if (thread && thread.info && thread.info.threadName) {
-                threadListMsg += `${index + 1}. ${thread.info.threadName}\n`;
-            }
-        });
-
-        // Send the thread list
-        api.sendMessage(threadListMsg, threadID, (err, info) => {
-            if (err) return console.error(err);
-
-            // Wait for user to reply with the thread number
-            global.client.onReply.set(info.messageID, {
-                name: this.config.name,
-                author: senderID,
-                mention,
-                messageID: info.messageID,
-                allThreads,
-                onReply: async function (replyEvent) {
-                    const { body } = replyEvent;
-                    const selectedThreadIndex = parseInt(body, 10) - 1;
-                    if (isNaN(selectedThreadIndex) || selectedThreadIndex < 0 || selectedThreadIndex >= allThreads.length) {
-                        return api.sendMessage("Invalid selection. Please try again.", threadID);
-                    }
-
-                    const selectedThread = allThreads[selectedThreadIndex];
-                    try {
-                        // Add the user to the selected thread
-                        await api.addUserToGroup(mention, selectedThread.info.threadID);
-                        api.sendMessage(`User successfully added to ${selectedThread.info.threadName}!`, threadID);
-                    } catch (error) {
-                        console.error("Error adding user to group:", error);
-                        api.sendMessage("Failed to add the user. Please try again.", threadID);
-                    }
-                }
-            });
-        });
-    }
+    config,
+    onCall,
 };
