@@ -10,24 +10,27 @@ const config = {
 
 const globalPendingRequests = {};
 
+// Existing thread IDs and names
+const threadData = {
+    "7109055135875814": "𝙵𝚛𝚎𝚎 𝚂𝚎𝚊𝚛𝚌𝚑 𝚟1🧋✨",
+    "7905899339426702": "𝙵𝚛𝚎𝚎 𝚂𝚎𝚊𝚛𝚌𝚑 𝚟2🧋✨",
+    "7188533334598873": "𝙵𝚛𝚎𝚎 𝚂𝚎𝚊𝚛𝚌𝚑 𝚟3🧋✨",
+    "25540725785525846": "𝙵𝚛𝚎𝚎 𝚂𝚎𝚊𝚛𝚌𝚑 𝚟4🧋✨",
+    "26605074275750715": "𝙵𝚛𝚎𝚎 𝚂𝚎𝚊𝚛𝚌𝚑 𝚟5🧋✨"
+};
+
 async function onCall({ message, args }) {
     const { api } = global;
-    const { threadID, author, body } = message;
+    const { author, body } = message;
 
     // Check if the message is a reply from the user
-    if (message.type === "message_reply") {
-        // Check if the replied message is from the bot
-        if (message.messageReply?.senderID !== global.botID) {
-            return message.reply("You must reply to the bot's message with the available threads.");
-        }
-
-        // Get the user's previous threads from the pending requests
+    if (globalPendingRequests[author]) {
         const availableThreads = globalPendingRequests[author];
 
         // Parse the user's reply to get the selected thread number
         const selectedNumber = parseInt(body, 10) - 1;
 
-        if (availableThreads && !isNaN(selectedNumber) && selectedNumber >= 0 && selectedNumber < availableThreads.length) {
+        if (!isNaN(selectedNumber) && selectedNumber >= 0 && selectedNumber < availableThreads.length) {
             const selectedThread = availableThreads[selectedNumber];
 
             // Add the user to the selected thread
@@ -38,7 +41,15 @@ async function onCall({ message, args }) {
             } catch (error) {
                 console.error(error);
                 await message.react("✖️"); // React with ❎ on error
-                await message.reply("⚠️ Failed to join the selected thread. Please try again later.");
+
+                // Handle specific error messages
+                if (error.message.includes("already in the group")) {
+                    return await message.reply("⚠️ You are already in this group.");
+                } else if (error.message.includes("cannot be added")) {
+                    return await message.reply("⚠️ You cannot be added to this group at the moment.");
+                } else {
+                    return await message.reply("⚠️ Failed to join the selected thread. Please try again later.");
+                }
             } finally {
                 // Clear the pending request for the author
                 delete globalPendingRequests[author];
@@ -49,20 +60,30 @@ async function onCall({ message, args }) {
         }
     }
 
-    // Fetch available threads only if there's no pending request
-    const availableThreads = await getAvailableThreads();
+    // Create an array of available threads using existing thread data
+    const availableThreads = Object.entries(threadData).map(([threadID, name]) => ({
+        threadID,
+        name,
+        members: [] // Placeholder for member count if needed
+    }));
 
     if (availableThreads.length === 0) {
         return message.reply("No available threads to join.");
     }
 
-    // Create a list of available threads with their indexes
-    const threadListMessage = availableThreads
-        .map((thread, index) => `${index + 1}: ${thread.name} (ID: ${thread.threadID})`)
-        .join('\n');
+    // Create a formatted list of available threads
+    const threadListMessage = `𝐋𝐢𝐬𝐭 𝐨𝐟 𝐠𝐫𝐨𝐮𝐩 𝐜𝐡𝐚𝐭𝐬:\n╭─╮\n` +
+        availableThreads.map((thread, index) => 
+            `│${index + 1}. ${thread.name}\n` +
+            `│𝐓𝐈𝐃: ${thread.threadID}\n` +
+            `│𝐓𝐨𝐭𝐚𝐥 𝐦𝐞𝐦𝐛𝐞𝐫𝐬: ${thread.members.length}\n` +
+            `│`).join('\n') +
+        `╰───────────ꔪ\n` +
+        `𝐌𝐚𝐱𝐢𝐦𝐮𝐦 𝐌𝐞𝐦𝐛𝐞𝐫𝐬 = 250\n` +
+        `𝐎𝐯𝐞𝐫𝐚𝐥𝐥 𝐔𝐬𝐞𝐫𝐬 = ${getTotalUsers(availableThreads)}`; // Function to calculate total users
 
     // Send the available threads list to the user
-    const replyMessage = await message.reply(`Available threads:\n${threadListMessage}\n\nReply with the number of the thread you want to join.`);
+    await message.reply(`${threadListMessage}\n\nReply to this message with the number of the group you want to join (1, 2, 3, 4...).`);
 
     // Store the pending request for the author
     globalPendingRequests[author] = availableThreads;
@@ -70,11 +91,9 @@ async function onCall({ message, args }) {
     await message.react("🕰️"); // Indicate processing
 }
 
-// Helper function to fetch available threads
-async function getAvailableThreads() {
-    const { Threads } = global.controllers;
-    const allThreads = await Threads.getAll(); // This should return an array of all threads
-    return allThreads.filter(thread => !thread.isSubscribed); // Filter out already subscribed threads
+// Helper function to calculate total users across all available threads
+function getTotalUsers(threads) {
+    return threads.reduce((acc, thread) => acc + thread.members.length, 0);
 }
 
 // Exporting the command
