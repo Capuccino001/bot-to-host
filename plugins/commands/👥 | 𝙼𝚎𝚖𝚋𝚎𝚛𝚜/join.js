@@ -1,10 +1,10 @@
 const config = {
     name: "join",
-    aliases: ["join"],
+    aliases: ["groupjoin"],
     description: "Get the number of groups and add users to a selected group.",
     usage: "[group number]",
     cooldown: 3,
-    permissions: [0], // Allowing access to admins or specific permissions only
+    permissions: [1, 2],  // Updated permissions
     credits: "coffee",
 };
 
@@ -14,11 +14,11 @@ if (!global.onReply) {
 }
 
 async function onCall({ message, global, args }) {
-    const { Threads, Users } = global.controllers; // Accessing the controllers
+    const { api, Threads } = global;
 
     try {
         // Fetch up to 20 threads (group chats) from the inbox
-        const groupList = await Threads.getThreadList(20, null, ['INBOX']);
+        const groupList = await api.getThreadList(20, null, ['INBOX']);
 
         if (groupList.length === 0) {
             await message.reply('No group chats available.');
@@ -40,7 +40,7 @@ async function onCall({ message, global, args }) {
 
             // Save the groupList to handle replies
             global.onReply.set(message.messageID, {
-                commandName: 'groups',
+                commandName: 'join',
                 groupList: groupList,
             });
         } else {
@@ -48,8 +48,8 @@ async function onCall({ message, global, args }) {
             const groupIndex = parseInt(args[0], 10);
 
             const replyData = global.onReply.get(message.messageID);
-            if (!replyData || replyData.commandName !== 'groups') {
-                await message.reply('Please request the group list first by typing `groups`.');
+            if (!replyData || replyData.commandName !== 'join') {
+                await message.reply('Please request the group list first by typing `join`.');
                 return;
             }
 
@@ -63,23 +63,27 @@ async function onCall({ message, global, args }) {
             const selectedGroup = groupList[groupIndex - 1];
             const groupID = selectedGroup.threadID;
 
-            // Get thread info using the Threads controller
-            const memberList = await Threads.getThreadInfo(groupID);
+            // Fetch thread info with fallback
+            const getThread = (await Threads.get(groupID)) || {};
+            const getThreadData = getThread.data || {};
+            const getThreadInfo = getThread.info || {};
+
+            const participantIDs = getThreadInfo.participantIDs || [];
 
             // Check if the user is already in the group
-            if (memberList.participantIDs.includes(message.senderID)) {
+            if (participantIDs.includes(message.senderID)) {
                 await message.reply(`You're already in the group chat: ${selectedGroup.threadName}`);
                 return;
             }
 
             // Check if the group is full (250 members limit)
-            if (memberList.participantIDs.length >= 250) {
+            if (participantIDs.length >= 250) {
                 await message.reply(`The group chat is full: ${selectedGroup.threadName}`);
                 return;
             }
 
             // Add the user to the group
-            await Threads.addUserToGroup(message.senderID, groupID);
+            await api.addUserToGroup(message.senderID, groupID);
             await message.reply(`You've successfully joined the group chat: ${selectedGroup.threadName}`);
         }
     } catch (error) {
