@@ -1,4 +1,4 @@
-import getCThread from '../../core/var/controllers/thread.js'; 
+import getCThread from '../core/var/controllers/thread.js'; // Correct path to thread.js
 
 export default {
     config: {
