@@ -8,29 +8,21 @@ const config = {
     credits: "Coffee",
 };
 
-const botID = "61565876685722"; // Bot's UID
-
 async function getAvailableThreads(threadID) {
     const { Threads } = global.controllers;
     const availableThreads = [];
 
     try {
         const threads = await Threads.getAll();
-
         for (const thread of threads) {
             if (thread.threadID !== threadID) {
-                // Fetch the latest info for the thread to check if the bot is still in it
-                const latestThreadInfo = await Threads.getInfo(thread.threadID);
-
-                if (latestThreadInfo.members.some(member => member.userID === botID)) {
-                    const membersLength = latestThreadInfo.members.length || 0;
-                    availableThreads.push({
-                        threadID: latestThreadInfo.threadID,
-                        name: latestThreadInfo.name || latestThreadInfo.threadID,
-                        membersLength,
-                        info: latestThreadInfo,
-                    });
-                }
+                const membersLength = thread.info?.members?.length || 0;
+                availableThreads.push({
+                    threadID: thread.threadID,
+                    name: thread.info.name || thread.threadID,
+                    membersLength,
+                    info: thread.info,
+                });
             }
         }
     } catch (error) {
