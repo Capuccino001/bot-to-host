@@ -8,8 +8,6 @@ const config = {
     credits: "Coffee",
 };
 
-const globalPendingRequests = {};
-
 // Function to get available threads and their member counts dynamically
 async function getAvailableThreads() {
     const { Threads } = global.controllers;
@@ -49,29 +47,27 @@ async function replyHandler({ eventData, message }) {
     // Parse the user's reply to get the selected thread number
     const selectedNumber = parseInt(body, 10) - 1;
 
-    if (!isNaN(selectedNumber) && selectedNumber >= 0 && selectedNumber < availableThreads.length) {
-        const selectedThread = availableThreads[selectedNumber];
-
-        // Add the user to the selected thread
-        try {
-            await global.api.addUserToGroup(author, selectedThread.threadID);
-            await message.reply(`You have been added to the thread: ${selectedThread.name}`);
-            await message.react("✔️"); // React with ✅ on success
-        } catch (error) {
-            console.error(error);
-            await message.react("✖️"); // React with ❎ on error
-
-            // Handle specific error messages
-            if (error.message.reply("already in the group")) {
-                return await message.reply("⚠️ You are already in this group.");
-            } else if (error.message.reply("cannot be added")) {
-                return await message.reply("⚠️ You cannot be added to this group at the moment.");
-            } else {
-                return await message.reply("⚠️ Failed to join the selected thread. Please try again later.");
-            }
-        }
-    } else {
+    if (isNaN(selectedNumber) || selectedNumber < 0 || selectedNumber >= availableThreads.length) {
         return message.reply("Invalid selection. Please reply with a valid number.");
+    }
+
+    const selectedThread = availableThreads[selectedNumber];
+
+    // Add the user to the selected thread
+    try {
+        await global.api.addUserToGroup(author, selectedThread.threadID);
+        await message.reply(`You have been added to the thread: ${selectedThread.name}`);
+        await message.react("✔️"); // React with ✅ on success
+    } catch (error) {
+        console.error(error);
+        await message.react("✖️"); // React with ❎ on error
+
+        // Handle specific error messages
+        if (error.message) {
+            return await message.reply(`⚠️ ${error.message}`);
+        } else {
+            return await message.reply("⚠️ Failed to join the selected thread. Please try again later.");
+        }
     }
 }
 
