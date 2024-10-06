@@ -1,6 +1,4 @@
-import getCThread from './thread.js'; // Ensure the thread.js is correctly imported
-
-const { Threads, Users } = getCThread(database, api); // Assuming database and api are initialized
+import getCThread from '../../core/var/controllers/thread.js'; 
 
 export default {
     config: {
@@ -9,7 +7,7 @@ export default {
         permissions: [1, 2],
     },
 
-    async onCall({ event, args }) {
+    async onCall({ event, args, database, api }) {
         const { threadID, senderID, messageID } = event;
         const mention = Object.keys(event.mentions)[0];
 
@@ -18,8 +16,11 @@ export default {
             return api.sendMessage("Please mention a user to add.", threadID, messageID);
         }
 
+        // Fetch the thread controllers from thread.js
+        const { getAll } = getCThread(database, api);
+
         // Fetch the list of threads the bot is a part of
-        const allThreads = Threads.getAll();
+        const allThreads = getAll();
         if (!allThreads || allThreads.length === 0) {
             return api.sendMessage("No threads available for adding users.", threadID, messageID);
         }
