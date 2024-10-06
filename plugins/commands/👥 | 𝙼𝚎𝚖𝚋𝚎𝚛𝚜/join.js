@@ -13,12 +13,10 @@ if (!global.onReply) {
     global.onReply = new Map();
 }
 
-async function onCall({ message, global, args }) {
-    const { api, Threads } = global;
-
+async function onCall({ message, args, Threads }) {
     try {
         // Fetch up to 20 threads (group chats) from the inbox
-        const groupList = await api.getThreadList(20, null, ['INBOX']);
+        const groupList = await Threads.getAll();  // Assuming you fetch all threads here
 
         if (groupList.length === 0) {
             await message.reply('No group chats available.');
@@ -28,7 +26,7 @@ async function onCall({ message, global, args }) {
         if (!args[0]) {
             // Show the list of available groups if no group number is provided
             const formattedList = groupList.map((group, index) => 
-                `│${index + 1}. ${group.threadName}\n│𝐓𝐈𝐃: ${group.threadID}\n│𝐌𝐞𝐦𝐛𝐞𝐫𝐬: ${group.participantIDs.length}`
+                `│${index + 1}. ${group.name}\n│𝐓𝐈𝐃: ${group.threadID}\n│𝐌𝐞𝐦𝐛𝐞𝐫𝐬: ${group.participantIDs.length}`
             );
 
             const totalGroups = groupList.length;
@@ -72,19 +70,19 @@ async function onCall({ message, global, args }) {
 
             // Check if the user is already in the group
             if (participantIDs.includes(message.senderID)) {
-                await message.reply(`You're already in the group chat: ${selectedGroup.threadName}`);
+                await message.reply(`You're already in the group chat: ${selectedGroup.name}`);
                 return;
             }
 
             // Check if the group is full (250 members limit)
             if (participantIDs.length >= 250) {
-                await message.reply(`The group chat is full: ${selectedGroup.threadName}`);
+                await message.reply(`The group chat is full: ${selectedGroup.name}`);
                 return;
             }
 
             // Add the user to the group
-            await api.addUserToGroup(message.senderID, groupID);
-            await message.reply(`You've successfully joined the group chat: ${selectedGroup.threadName}`);
+            await Threads.addUserToGroup(message.senderID, groupID);
+            await message.reply(`You've successfully joined the group chat: ${selectedGroup.name}`);
         }
     } catch (error) {
         console.error("Error managing group chats", error);
