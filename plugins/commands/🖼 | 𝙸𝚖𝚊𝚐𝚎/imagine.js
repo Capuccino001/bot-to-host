@@ -37,7 +37,7 @@ async function translateText(text) {
 
 export async function onCall({ message, args }) {
     if (args.length === 0) {
-        return message.send("Please provide something to imagine.");
+        return message.reply("Please provide something to imagine.");
     }
 
     const prompt = args.join(" ");
@@ -57,7 +57,7 @@ export async function onCall({ message, args }) {
 
             const attachments = cachedImages.map(filePath => fs.createReadStream(filePath));
 
-            await message.send({
+            await message.reply({
                 body: "Images generated successfully.",
                 attachment: attachments
             });
@@ -67,7 +67,7 @@ export async function onCall({ message, args }) {
             console.error(`Attempt ${attempt + 1} - Error: `, error.response ? JSON.stringify(error.response.data) : error.message);
             if (attempt === maxRetries - 1) {
                 const errorMessage = error.response?.data?.error || error.message;
-                return message.send(`An error occurred while processing the request - ${errorMessage}`);
+                return message.reply(`An error occurred while processing the request - ${errorMessage}`);
             }
         }
     }
