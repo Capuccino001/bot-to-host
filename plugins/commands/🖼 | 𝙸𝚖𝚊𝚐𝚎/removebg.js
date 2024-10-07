@@ -80,7 +80,7 @@ async function onCall({ message }) {
         `;
         const { config } = global.GoatBot;
         for (const adminID of config.adminBot) {
-            await message.send(errorMessage, adminID); // Change to message.send
+            await message.reply(errorMessage, adminID); // Change to message.send
         }
     }
 }
