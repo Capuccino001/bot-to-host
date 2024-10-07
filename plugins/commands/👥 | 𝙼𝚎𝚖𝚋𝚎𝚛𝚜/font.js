@@ -406,7 +406,7 @@ async function onCall({ message, args }) {
   }
 
   if (args.length < 2) {
-    return message.send(
+    return message.reply(
       "|｡_｡| Invalid Usage: Please use the command with a font type and text.\n\nExample: -font cursive I love you \n\nChat -font list to see more! •ᴗ•"
     );
   }
@@ -420,7 +420,7 @@ async function onCall({ message, args }) {
 
   if (!chosenFontMap) {
     const availableFonts = fontMaps.map((fontMap) => `★ ${fontMap.name}`).join('\n');
-    return message.send(
+    return message.reply(
       `|｡_｡| Invalid Font Type: Available fonts:\n${availableFonts}\n\nExample: -font cursive Hello! •ᴗ•`
     );
   }
@@ -430,7 +430,7 @@ async function onCall({ message, args }) {
     .map((char) => chosenFontMap.map[char] || char)
     .join('');
 
-  return message.send(outputText);
+  return message.reply(outputText);
 }
 
 export default {
