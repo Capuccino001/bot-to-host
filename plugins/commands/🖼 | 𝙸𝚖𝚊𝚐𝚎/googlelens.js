@@ -22,7 +22,7 @@ async function onCall({ message, api }) {
 
     await message.react("🕰️"); // Indicate processing
 
-    const apiUrl = `https://deku-rest-api.gleeze.com/api/glens?url=${encodeURIComponent(imageUrl)}`;
+    const apiUrl = `https://deku-rest-api.ooguy.com/api/glens?url=${encodeURIComponent(imageUrl)}`;
 
     try {
         const response = await axios.get(apiUrl);
