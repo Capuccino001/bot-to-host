@@ -31,7 +31,7 @@ const onCall = async ({ message, args, getLang }) => {
     const { songTitle, artist } = getSongTitleAndArtist(args);
 
     if (!songTitle) {
-        return message.send(header + getLang("message") + footer);
+        return message.reply(header + getLang("message") + footer);
     }
 
     try {
@@ -57,7 +57,7 @@ const onCall = async ({ message, args, getLang }) => {
         console.log("Audio sent successfully.");
     } catch (error) {
         console.error("Error occurred:", error);
-        await message.send(header + `An error occurred: ${error.message}` + footer);
+        await message.reply(header + `An error occurred: ${error.message}` + footer);
     }
 };
 
