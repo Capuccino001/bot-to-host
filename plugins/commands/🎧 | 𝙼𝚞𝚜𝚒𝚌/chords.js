@@ -9,7 +9,7 @@ const config = {
 };
 
 const fetchChords = async (query) => {
-    const apiUrl = `https://deku-rest-api.gleeze.com/search/chords?q=${encodeURIComponent(query)}`;
+    const apiUrl = `https://deku-rest-api.ooguy.com/search/chords?q=${encodeURIComponent(query)}`;
 
     const response = await fetch(apiUrl);
     if (!response.ok) {
