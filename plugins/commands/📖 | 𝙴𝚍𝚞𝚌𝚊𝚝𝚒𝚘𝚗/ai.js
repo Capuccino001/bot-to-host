@@ -40,10 +40,10 @@ async function onCall({ message, args }) {
 
     // Handle text queries using the GPT-4 API
     try {
-        const { data } = await axios.get(`https://lorex-gpt4.onrender.com/api/gpt4?prompt=${encodeURIComponent(query)}&uid=${userId}`);
+        const { data } = await axios.get(`https://deku-rest-api.gleeze.com/gpt4?prompt=${encodeURIComponent(query)}&uid=${userId}`);
 
-        if (data && data.response) {
-            await message.send(`${header}\n${data.response}\n${footer}`);
+        if (data && data.gpt4) {
+            await message.send(`${header}\n${data.gpt4}\n${footer}`);
         } else {
             await message.send(`${header}\nSorry, I couldn't get a response from the API.\n${footer}`);
         }
