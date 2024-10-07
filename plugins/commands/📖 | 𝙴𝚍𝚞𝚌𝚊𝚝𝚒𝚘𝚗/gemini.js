@@ -48,7 +48,8 @@ async function onCall({ message, args }) {
             console.log("Gemini response: ", response);
 
             if (response) {
-                await message.reply(`ᯓ★ | 𝙶𝚎𝚖𝚒𝚗𝚒\n・──────────────・\n${response}\n・───── >ᴗ< ──────・`);
+                const actualResponse = response.replace(/ᯓ★ | 𝙶𝚎𝚖𝚒𝚗𝚒\n・──────────────・\n/g, '').replace(/\n・───── >ᴗ< ──────・/g, '');
+                await message.reply(actualResponse);
                 await message.react("✔️");
             } else {
                 await message.reply(`ᯓ★ | 𝙶𝚎𝚖𝚒𝚗𝚒\n・──────────────・\n⚠️ No response received from Gemini.\n・───── >ᴗ< ──────・`);
