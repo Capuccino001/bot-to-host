@@ -6,7 +6,7 @@ const config = {
     description: "Ask Copilot AI a question.",
     usage: "[query]",
     cooldown: 5,
-    permissions: [1, 2],
+    permissions: [0],
     credits: "Coffee",
 };
 
