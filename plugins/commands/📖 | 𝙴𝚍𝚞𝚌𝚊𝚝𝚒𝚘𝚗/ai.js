@@ -28,13 +28,13 @@ async function onCall({ message, args }) {
             const { gemini } = response.data;
 
             if (gemini) {
-                return await message.send(`${header}\n${gemini}\n${footer}`);
+                return await message.reply(`${header}\n${gemini}\n${footer}`);
             } else {
-                return await message.send(`${header}\nFailed to recognize the image.\n${footer}`);
+                return await message.reply(`${header}\nFailed to recognize the image.\n${footer}`);
             }
         } catch (error) {
             console.error("Error fetching image recognition:", error);
-            return await message.send(`${header}\nAn error occurred while processing the image.\n${footer}`);
+            return await message.reply(`${header}\nAn error occurred while processing the image.\n${footer}`);
         }
     }
 
@@ -43,13 +43,13 @@ async function onCall({ message, args }) {
         const { data } = await axios.get(`https://deku-rest-api.gleeze.com/gpt4?prompt=${encodeURIComponent(query)}&uid=${userId}`);
 
         if (data && data.gpt4) {
-            await message.send(`${header}\n${data.gpt4}\n${footer}`);
+            await message.reply(`${header}\n${data.gpt4}\n${footer}`);
         } else {
-            await message.send(`${header}\nSorry, I couldn't get a response from the API.\n${footer}`);
+            await message.reply(`${header}\nSorry, I couldn't get a response from the API.\n${footer}`);
         }
     } catch (error) {
         console.error("Error fetching from GPT-4 API:", error);
-        await message.send(`${header}\nAn error occurred while trying to reach the API.\n${footer}`);
+        await message.reply(`${header}\nAn error occurred while trying to reach the API.\n${footer}`);
     }
 }
 
