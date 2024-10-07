@@ -11,21 +11,28 @@ const config = {
     credits: "RN",
 };
 
-async function onCall({ message, args }) {
-    // Handle case where no query is provided
-    if (!args.length) {
-        return message.reply("ᝰ.ᐟ | 𝙲𝚑𝚊𝚝𝙶𝙿𝚃\n・──────────────・\nHello! How can I assist you today?\n・───── >ᴗ< ──────・");
-    }
-
-    const query = args.join(" ");
+async function onCall({ message, args, replyHandler }) {
+    let query;
     const uid = message.senderID; // Using senderID as uid
+
+    // Check if the message is a reply to the bot's message with a specific header
+    if (replyHandler?.isReplyToBot && replyHandler?.header === 'ᝰ.ᐟ | 𝙲𝚑𝚊𝚝𝙶𝙿𝚃') {
+        // If the message is a reply, extract the query from the reply
+        query = message.body;
+    } else {
+        // Handle case where no query is provided
+        if (!args.length) {
+            return message.reply("ᝰ.ᐟ | 𝙲𝚑𝚊𝚝𝙶𝙿𝚃\n・──────────────・\nHello! How can I assist you today?\n・───── >ᴗ< ──────・");
+        }
+        query = args.join(" ");
+    }
 
     // Indicate processing
     const typingIndicator = global.api.sendTypingIndicator(message.threadID);
 
     try {
-        // Send request to the API
-        const { data } = await axios.get(`https://deku-rest-api.ooguy.com/gpt4`, {
+        // Send request to the new API
+        const { data } = await axios.get(`https://markdevs-last-api.onrender.com/gpt4`, {
             params: {
                 prompt: query,
                 uid: uid
@@ -38,7 +45,7 @@ async function onCall({ message, args }) {
         if (data?.gpt4) {
             await message.reply(`ᝰ.ᐟ | 𝙲𝚑𝚊𝚝𝙶𝙿𝚃\n・──────────────・\n${data.gpt4}\n・───── >ᴗ< ──────・`);
         } else {
-            await message.reply("ᝰ.ᐟ | 𝙲𝚊𝚝𝙶𝙿𝚃\n・──────────────・\nError: Unexpected response format from API.\n・───── >ᴗ< ──────・");
+            await message.reply("ᝰ.ᐟ | 𝙲𝚑𝚊𝚝𝙶𝙿𝚃\n・──────────────・\nError: Unexpected response format from API.\n・───── >ᴗ< ──────・");
         }
     } catch (error) {
         // Log the error for debugging
