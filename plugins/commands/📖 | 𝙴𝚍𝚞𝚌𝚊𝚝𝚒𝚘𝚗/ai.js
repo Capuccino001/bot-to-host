@@ -22,13 +22,13 @@ async function onCall({ message, args }) {
         const attachment = message.messageReply.attachments[0];
         const imageURL = attachment.url;
 
-        const geminiUrl = `https://joncll.serv00.net/chat.php?ask=${encodeURIComponent(query)}&imgurl=${encodeURIComponent(imageURL)}`;
+        const geminiUrl = `https://deku-rest-api.gleeze.com/gemini?prompt=${encodeURIComponent(query)}&url=${encodeURIComponent(imageURL)}`;
         try {
             const response = await axios.get(geminiUrl);
-            const { vision } = response.data;
+            const { gemini } = response.data;
 
-            if (vision) {
-                return await message.send(`${header}\n${vision}\n${footer}`);
+            if (gemini) {
+                return await message.send(`${header}\n${gemini}\n${footer}`);
             } else {
                 return await message.send(`${header}\nFailed to recognize the image.\n${footer}`);
             }
