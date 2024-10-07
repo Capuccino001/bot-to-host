@@ -36,15 +36,15 @@ async function onCall({ message, args }) {
 
         // Validate the response
         if (data?.gpt4) {
-            await message.send(`ᝰ.ᐟ | 𝙲𝚑𝚊𝚝𝙶𝙿𝚃\n・──────────────・\n${data.gpt4}\n・───── >ᴗ< ──────・`);
+            await message.reply(`ᝰ.ᐟ | 𝙲𝚑𝚊𝚝𝙶𝙿𝚃\n・──────────────・\n${data.gpt4}\n・───── >ᴗ< ──────・`);
         } else {
-            await message.send("ᝰ.ᐟ | 𝙲𝚊𝚝𝙶𝙿𝚃\n・──────────────・\nError: Unexpected response format from API.\n・───── >ᴗ< ──────・");
+            await message.reply("ᝰ.ᐟ | 𝙲𝚊𝚝𝙶𝙿𝚃\n・──────────────・\nError: Unexpected response format from API.\n・───── >ᴗ< ──────・");
         }
     } catch (error) {
         // Log the error for debugging
         console.error("API call failed: ", error);
         await message.react(`✖️`);
-        await message.send("An error occurred while fetching the data."); // Inform the user about the error
+        await message.reply("An error occurred while fetching the data."); // Inform the user about the error
     }
 }
 
