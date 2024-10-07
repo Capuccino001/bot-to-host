@@ -11,32 +11,24 @@ const config = {
     credits: "RN",
 };
 
-// Define the specific header to check
-const SPECIFIC_HEADER = "ᝰ.ᐟ | 𝙲𝚑𝚊𝚝𝙶𝙿𝚃";
+async function onCall({ message, args }) {
+    // Set a default query if none is provided
+    const query = args.join(" ") || "hi";
+    const uid = message.senderID; // Using senderID as uid
 
-async function replyHandler({ eventData, message }) {
-    const { body, senderID, reply_message } = message;
-
-    // Ignore the reply if it is not to a bot's message with the specific header
-    if (!reply_message || !reply_message.body.startsWith(SPECIFIC_HEADER)) {
-        return; // Ignore without any response
-    }
-
-    const query = body.trim(); // Use the reply content as the new query
-
-    if (!query) {
-        return message.reply("Please provide a question.");
-    }
-
-    const uid = senderID;
+    // Indicate processing
+    const typingIndicator = global.api.sendTypingIndicator(message.threadID);
 
     try {
+        // Send request to the new API
         const { data } = await axios.get(`https://markdevs-last-api.onrender.com/gpt4`, {
             params: {
                 prompt: query,
                 uid: uid
             }
         });
+
+        typingIndicator(); // Stop the typing indicator
 
         // Validate the response
         if (data?.gpt4) {
@@ -45,54 +37,14 @@ async function replyHandler({ eventData, message }) {
             await message.reply("ᝰ.ᐟ | 𝙲𝚑𝚊𝚝𝙶𝙿𝚃\n・──────────────・\nError: Unexpected response format from API.\n・───── >ᴗ< ──────・");
         }
     } catch (error) {
-        console.error('Error during API call:', error);
-        await message.react("✖️");
-    }
-}
-
-async function onCall({ message, args }) {
-    const uid = message.senderID;
-    
-    let query;
-    if (args.length) {
-        query = args.join(" ");
-    } else {
-        return message.reply("ᝰ.ᐟ | 𝙲𝚑𝚊𝚝𝙶𝙿𝚃\n・──────────────・\nHello! How can I assist you today?\n・───── >ᴗ< ──────・");
-    }
-
-    // Indicate typing status
-    const typingIndicator = global.api.sendTypingIndicator(message.threadID);
-
-    try {
-        // Call the GPT-4 API
-        const { data } = await axios.get(`https://markdevs-last-api.onrender.com/gpt4`, {
-            params: {
-                prompt: query,
-                uid: uid
-            }
-        });
-
-        typingIndicator(); // Stop typing indicator
-
-        if (data?.gpt4) {
-            await message.reply(`ᝰ.ᐟ | 𝙲𝚑𝚊𝚝𝙶𝙿𝚃\n・──────────────・\n${data.gpt4}\n・───── >ᴗ< ──────・`).then(msg => {
-                // Attach a reply event for follow-up queries
-                msg.addReplyEvent({
-                    callback: replyHandler,
-                    type: "message", // Set event type
-                });
-            });
-        } else {
-            await message.reply("ᝰ.ᐟ | 𝙲𝚑𝚊𝚝𝙶𝙿𝚃\n・──────────────・\nError: Unexpected response format from API.\n・───── >ᴗ< ──────・");
-        }
-    } catch (error) {
-        console.error("Error during API call:", error);
-        await message.react("✖️");
-        await message.reply("An error occurred while fetching the data.");
+        // Log the error for debugging
+        console.error("API call failed: ", error);
+        await message.react(`✖️`);
+        await message.reply("An error occurred while fetching the data."); // Inform the user about the error
     }
 }
 
 export default {
     config,
-    onCall,
+    onCall
 };
