@@ -25,6 +25,12 @@ async function getAvailableThreads(threadID) {
                 });
             }
         }
+        // Sort the threads based on their names
+        availableThreads.sort((a, b) => {
+            const versionA = parseInt(a.name.match(/v(\d+)/)[1]);
+            const versionB = parseInt(b.name.match(/v(\d+)/)[1]);
+            return versionA - versionB;
+        });
     } catch (error) {
         console.error('Error fetching threads:', error);
     }
