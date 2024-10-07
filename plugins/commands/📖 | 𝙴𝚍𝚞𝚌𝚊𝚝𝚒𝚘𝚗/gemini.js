@@ -1,4 +1,3 @@
-import samirapi from 'samirapi';
 import axios from 'axios';
 
 const config = {
@@ -7,18 +6,15 @@ const config = {
     description: "Interacts with the Gemini AI model.",
     usage: "[query]",
     cooldown: 5,
-    permissions: [1, 2],
+    permissions: [0],
     credits: "Coffee",
 };
 
 async function onCall({ message, args }) {
     const userId = message.senderID;
 
-    if (!args.length) {
-        return await message.reply("ᯓ★ | 𝙶𝚎𝚖𝚒𝚗𝚒\n・──────────────・\nHello! How can I assist you today?\n・───── >ᴗ< ──────・");
-    }
-
-    const query = args.join(" ");
+    // Default the query to "hi" if no arguments are provided
+    const query = args.join(" ") || "hi";
 
     try {
         await message.react("🕰️");
@@ -41,15 +37,14 @@ async function onCall({ message, args }) {
                 await message.reply(`ᯓ★ | 𝙶𝚎𝚖𝚒𝚗𝚒\n・──────────────・\nFailed to recognize the image.\n・───── >ᴗ< ──────・`);
             }
         } else {
-            const response = await samirapi.gemini(query, userId);
+            const geminiUrl = `https://joncll.serv00.net/chat.php?ask=${encodeURIComponent(query)}`;
+            const geminiResponse = await axios.get(geminiUrl);
+            const { textResponse } = geminiResponse.data;
 
             stopTypingIndicator();
 
-            console.log("Gemini response: ", response);
-
-            if (response) {
-                const actualResponse = response.replace(/ᯓ★ | 𝙶𝚎𝚖𝚒𝚗𝚒\n・──────────────・\n/g, '').replace(/\n・───── >ᴗ< ──────・/g, '');
-                await message.reply(actualResponse);
+            if (textResponse) {
+                await message.reply(`ᯓ★ | 𝙶𝚎𝚖𝚒𝚗𝚒\n・──────────────・\n${textResponse}\n・───── >ᴗ< ──────・`);
                 await message.react("✔️");
             } else {
                 await message.reply(`ᯓ★ | 𝙶𝚎𝚖𝚒𝚗𝚒\n・──────────────・\n⚠️ No response received from Gemini.\n・───── >ᴗ< ──────・`);
