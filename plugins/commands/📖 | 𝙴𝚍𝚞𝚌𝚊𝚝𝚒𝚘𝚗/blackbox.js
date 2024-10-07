@@ -19,13 +19,13 @@ async function onCall({ message, args }) {
         // Check if the response contains the expected data
         if (data && data.response) {
             const formattedResponse = `⿻ | 𝙱𝚕𝚊𝚌𝚔 𝙱𝚘𝚡 |\n・──────────────・\n${data.response}\n・───── >ᴗ< ──────・`;
-            await message.send(formattedResponse);
+            await message.reply(formattedResponse);
         } else {
-            await message.send("No response from the API.");
+            await message.reply("No response from the API.");
         }
     } catch (error) {
         console.error("Error fetching from the API:", error);
-        await message.send("An error occurred while fetching data.");
+        await message.reply("An error occurred while fetching data.");
     }
 }
 
