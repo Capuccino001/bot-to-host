@@ -29,18 +29,18 @@ async function fetchLyrics(message, songName) {
         sendFormattedLyrics(message, title, artist, lyrics);
     } catch (error) {
         console.error(`Error fetching lyrics from ${apiConfig.name} for "${songName}":`, error.message);
-        message.send(`Sorry, there was an error getting the lyrics for "${songName}": ${error.message}`);
+        message.reply(`Sorry, there was an error getting the lyrics for "${songName}": ${error.message}`);
     }
 }
 
 function sendFormattedLyrics(message, title, artist, lyrics) {
     const formattedLyrics = `🎧 | Title: ${title}\n🎤 | Artist: ${artist}\n・───── >ᴗ< ──────・\n${lyrics}\n・──────────────・`;
-    message.send(formattedLyrics);
+    message.reply(formattedLyrics);
 }
 
 async function onCall({ message, args }) {
     const songName = args.join(" ").trim();
-    if (!songName) return message.send("Please provide a song name!");
+    if (!songName) return message.reply("Please provide a song name!");
 
     await fetchLyrics(message, songName);
 }
