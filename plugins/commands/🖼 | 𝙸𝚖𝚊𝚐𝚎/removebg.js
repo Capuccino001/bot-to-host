@@ -60,7 +60,7 @@ async function onCall({ message }) {
         writeFileSync(filePath, outputBuffer);
 
         // Send the image with the completion message in a single message
-        const messageWithImage = await message.send({
+        const messageWithImage = await message.reply({
             body: "✅ Background removal complete!",
             attachment: createReadStream(filePath)
         }, threadID);
