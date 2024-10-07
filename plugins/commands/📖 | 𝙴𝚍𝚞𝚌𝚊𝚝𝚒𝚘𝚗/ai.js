@@ -22,34 +22,34 @@ async function onCall({ message, args }) {
         const attachment = message.messageReply.attachments[0];
         const imageURL = attachment.url;
 
-        const geminiUrl = `https://deku-rest-api.gleeze.com/gemini?prompt=${encodeURIComponent(query)}&url=${encodeURIComponent(imageURL)}`;
+        const geminiUrl = `https://joncll.serv00.net/chat.php?ask=${encodeURIComponent(query)}&imgurl=${encodeURIComponent(imageURL)}`;
         try {
             const response = await axios.get(geminiUrl);
-            const { gemini } = response.data;
+            const { vision } = response.data;
 
-            if (gemini) {
-                return await message.reply(`${header}\n${gemini}\n${footer}`);
+            if (vision) {
+                return await message.send(`${header}\n${vision}\n${footer}`);
             } else {
-                return await message.reply(`${header}\nFailed to recognize the image.\n${footer}`);
+                return await message.send(`${header}\nFailed to recognize the image.\n${footer}`);
             }
         } catch (error) {
             console.error("Error fetching image recognition:", error);
-            return await message.reply(`${header}\nAn error occurred while processing the image.\n${footer}`);
+            return await message.send(`${header}\nAn error occurred while processing the image.\n${footer}`);
         }
     }
 
     // Handle text queries using the GPT-4 API
     try {
-        const { data } = await axios.get(`https://deku-rest-api.gleeze.com/gpt4?prompt=${encodeURIComponent(query)}&uid=${userId}`);
+        const { data } = await axios.get(`https://lorex-gpt4.onrender.com/api/gpt4?prompt=${encodeURIComponent(query)}&uid=${userId}`);
 
-        if (data && data.gpt4) {
-            await message.reply(`${header}\n${data.gpt4}\n${footer}`);
+        if (data && data.response) {
+            await message.send(`${header}\n${data.response}\n${footer}`);
         } else {
-            await message.reply(`${header}\nSorry, I couldn't get a response from the API.\n${footer}`);
+            await message.send(`${header}\nSorry, I couldn't get a response from the API.\n${footer}`);
         }
     } catch (error) {
         console.error("Error fetching from GPT-4 API:", error);
-        await message.reply(`${header}\nAn error occurred while trying to reach the API.\n${footer}`);
+        await message.send(`${header}\nAn error occurred while trying to reach the API.\n${footer}`);
     }
 }
 
