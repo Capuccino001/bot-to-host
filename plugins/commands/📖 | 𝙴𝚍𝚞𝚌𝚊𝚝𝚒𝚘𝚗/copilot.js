@@ -16,11 +16,8 @@ async function onCall({ message, args }) {
     const header = "✧₊⁺ | 𝙲𝚘𝚙𝚒𝚕𝚘𝚝\n・──────────────・\n";
     const footer = "\n・───── >ᴗ< ──────・";
 
-    if (!args.length) {
-        return await message.reply(`${header}Please provide a question.${footer}`);
-    }
-
-    const query = args.join(" ");
+    // Default query is "hi" if args are empty
+    const query = args.join(" ") || "hi";
 
     try {
         await message.react("🕰️");
