@@ -25,7 +25,7 @@ async function replyHandler({ eventData, message }) {
     const query = body.trim(); // Use the reply content as the new query
 
     if (!query) {
-        return message.reply("Please provide a query.");
+        return message.reply("Please provide a question.");
     }
 
     const uid = senderID;
