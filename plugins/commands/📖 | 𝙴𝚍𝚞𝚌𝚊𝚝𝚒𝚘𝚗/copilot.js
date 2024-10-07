@@ -21,7 +21,7 @@ async function onCall({ message, args }) {
 
     await message.react("🕰️"); // Indicate processing
 
-    const apiUrl = `https://deku-rest-api.gleeze.com/api/copilot?prompt=${encodeURIComponent(userPrompt)}&uid=2`;
+    const apiUrl = `https://deku-rest-api.ooguy.com/api/copilot?prompt=${encodeURIComponent(userPrompt)}&uid=2`;
 
     try {
         const response = await fetch(apiUrl);
