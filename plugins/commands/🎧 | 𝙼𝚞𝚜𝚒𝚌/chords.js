@@ -22,7 +22,7 @@ const fetchChords = async (query) => {
 
 async function onCall({ message, args }) {
     if (!args.length) {
-        return message.send("Please provide a song title or artist to search for chords.");
+        return message.reply("Please provide a song title or artist to search for chords.");
     }
 
     const query = args.join(" ");
@@ -39,13 +39,13 @@ async function onCall({ message, args }) {
 ${chords}
 ・──────────────・
             `;
-            message.send(replyMessage);
+            message.reply(replyMessage);
         } else {
-            message.send("No chords found for your search query.");
+            message.reply("No chords found for your search query.");
         }
     } catch (error) {
         console.error("Chords fetch error:", error.message);
-        message.send("An error occurred while fetching chords. Please try again later.");
+        message.reply("An error occurred while fetching chords. Please try again later.");
     }
 }
 
