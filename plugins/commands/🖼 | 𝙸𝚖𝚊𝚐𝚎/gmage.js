@@ -24,7 +24,7 @@ const config = {
 async function onCall({ message, args }) {
     try {
         if (args.length === 0) {
-            return message.send('📷 | Follow this format:\n-gmage naruto uzumaki');
+            return message.reply('📷 | Follow this format:\n-gmage naruto uzumaki');
         }
 
         const searchQuery = args.join(' ');
@@ -83,16 +83,16 @@ async function onCall({ message, args }) {
 
         if (imagesDownloaded > 0) {
             const attachments = imgData.map(filePath => fs.createReadStream(filePath));
-            await message.send({ body: `Here are some images for "${searchQuery}":`, attachment: attachments });
+            await message.reply({ body: `Here are some images for "${searchQuery}":`, attachment: attachments });
 
             // Clean up images after sending
             await Promise.all(imgData.map(filePath => fs.remove(filePath)));
         } else {
-            await message.send("📷 | Can't get your images atm, do try again later... (⁠｡⁠ŏ⁠﹏⁠ŏ⁠)");
+            await message.reply("📷 | Can't get your images atm, do try again later... (⁠｡⁠ŏ⁠﹏⁠ŏ⁠)");
         }
     } catch (error) {
         console.error(error);
-        await message.send("📷 | Can't get your images atm, do try again later... (⁠｡⁠ŏ⁠﹏⁠ŏ⁠)");
+        await message.reply("📷 | Can't get your images atm, do try again later... (⁠｡⁠ŏ⁠﹏⁠ŏ⁠)");
     }
 }
 
