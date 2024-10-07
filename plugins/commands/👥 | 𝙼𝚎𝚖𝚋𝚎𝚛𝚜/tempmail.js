@@ -16,7 +16,7 @@ const config = {
 async function onCall({ message, args }) {
     try {
         if (args.length === 0) {
-            return message.send("Use '-tempmail create' to generate a temporary email or '-tempmail inbox [email]' to retrieve inbox messages.");
+            return message.reply("Use '-tempmail create' to generate a temporary email or '-tempmail inbox [email]' to retrieve inbox messages.");
         }
 
         const command = args[0].toLowerCase();
@@ -25,13 +25,13 @@ async function onCall({ message, args }) {
             case "create":
                 return await createTempEmail(message);
             case "inbox":
-                return args.length === 2 ? await checkInbox(message, args[1]) : message.send("❌ | Please provide an email address for the inbox command.");
+                return args.length === 2 ? await checkInbox(message, args[1]) : message.reply("❌ | Please provide an email address for the inbox command.");
             default:
-                return message.send("❌ | Invalid command. Use '-tempmail create' or '-tempmail inbox [email]'.");
+                return message.reply("❌ | Invalid command. Use '-tempmail create' or '-tempmail inbox [email]'.");
         }
     } catch (error) {
         console.error("Unexpected error:", error.message);
-        return message.send(`❌ | An unexpected error occurred: ${error.message}`);
+        return message.reply(`❌ | An unexpected error occurred: ${error.message}`);
     }
 }
 
@@ -50,13 +50,13 @@ async function createTempEmail(message) {
 
         // If email is generated, send it; otherwise, return an error message
         if (email && email.endsWith("@rteet.com")) {
-            return message.send(`・───── >ᴗ< ──────・\n📩 Generated Email:\n🔹${email}\n・──────────────・`);
+            return message.reply(`・───── >ᴗ< ──────・\n📩 Generated Email:\n🔹${email}\n・──────────────・`);
         } else {
             throw new Error("Failed to generate a valid email after several attempts.");
         }
     } catch (error) {
         console.error("❌ | Failed to generate email", error.message);
-        return message.send(`❌ | Failed to generate email. Error: ${error.message}`);
+        return message.reply(`❌ | Failed to generate email. Error: ${error.message}`);
     }
 }
 
@@ -64,14 +64,14 @@ async function checkInbox(message, email) {
     try {
         const inboxMessages = await samirapi.getInbox(email);
         if (!Array.isArray(inboxMessages) || inboxMessages.length === 0) {
-            return message.send("❌ | No messages found in the inbox.");
+            return message.reply("❌ | No messages found in the inbox.");
         }
 
         const { date, from, subject } = inboxMessages[0]; // Get the most recent message
-        return message.send(`━━━━━━━━━━━━━━━━\n📬 Inbox messages for ${email}:\n📧 From: ${from}\n📩 Subject: ${subject}\n━━━━━━━━━━━━━━━━`);
+        return message.reply(`━━━━━━━━━━━━━━━━\n📬 Inbox messages for ${email}:\n📧 From: ${from}\n📩 Subject: ${subject}\n━━━━━━━━━━━━━━━━`);
     } catch (error) {
         console.error("❌ | Failed to retrieve inbox messages", error.message);
-        return message.send(`❌ | Failed to retrieve inbox messages. Error: ${error.message}`);
+        return message.reply(`❌ | Failed to retrieve inbox messages. Error: ${error.message}`);
     }
 }
 
