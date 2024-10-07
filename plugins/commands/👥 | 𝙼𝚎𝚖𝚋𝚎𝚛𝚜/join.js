@@ -27,9 +27,18 @@ async function getAvailableThreads(threadID) {
         }
         // Sort the threads based on their names
         availableThreads.sort((a, b) => {
-            const versionA = parseInt(a.name.match(/v(\d+)/)[1]);
-            const versionB = parseInt(b.name.match(/v(\d+)/)[1]);
-            return versionA - versionB;
+            const versionA = a.name.match(/v(\d+)/);
+            const versionB = b.name.match(/v(\d+)/);
+
+            if (versionA && versionB) {
+                return parseInt(versionA[1]) - parseInt(versionB[1]);
+            } else if (versionA) {
+                return -1;
+            } else if (versionB) {
+                return 1;
+            } else {
+                return a.name.localeCompare(b.name);
+            }
         });
     } catch (error) {
         console.error('Error fetching threads:', error);
@@ -95,7 +104,7 @@ async function onCall({ message, args }) {
         `𝐎𝐯𝐞𝐫𝐚𝐥𝐥 𝐔𝐬𝐞𝐫𝐬 = ${getTotalUsers(availableThreads)}`;
 
     await message.reply(`${threadListMessage}\n\nReply to this message with the number of the group you want to join (1, 2, 3, 4...).`).then(msg => {
-        msg.addReplyEvent({ callback: replyHandler, type: "message", availableThreads });
+                msg.addReplyEvent({ callback: replyHandler, type: "message", availableThreads });
     });
 
     await message.react("🕰️");
