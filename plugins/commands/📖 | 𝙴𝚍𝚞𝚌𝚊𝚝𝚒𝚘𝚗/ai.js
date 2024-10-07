@@ -40,7 +40,7 @@ async function onCall({ message, args }) {
 
     // Handle text queries using the GPT-4 API
     try {
-        const { data } = await axios.get(`https://orc-six.vercel.app/gpt4?ask=${encodeURIComponent(query)}`);
+        const { data } = await axios.get(`https://lorex-gpt4.onrender.com/api/gpt4?prompt=${encodeURIComponent(query)}&uid=${userId}`);
 
         if (data) {
             await message.send(`${header}\n${data}\n${footer}`);
