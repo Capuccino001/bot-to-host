@@ -52,7 +52,7 @@ async function onCall({ message, api }) {
         writeFileSync(imagePath, imageResponse.data);
 
         // Send the enhanced image with a completion message
-        await message.send({
+        await message.reply({
             body: "✅ Image enhancement complete!",
             attachment: createReadStream(imagePath)
         }, threadID);
