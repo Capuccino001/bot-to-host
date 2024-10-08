@@ -8,32 +8,55 @@ const config = {
     credits: "Coffee",
 };
 
-async function onCall({ message, args }) {
-    const userQuery = args.join(" ");
+// Function to fetch data from API and handle response
+const fetchApiData = async (query) => {
+    const apiUrl = `https://example.com/api?query=${encodeURIComponent(query)}`;
 
-    if (!userQuery) return message.reply("Please provide a query.");
+    const response = await fetch(apiUrl);
+    if (!response.ok) throw new Error("⚠️ Failed to fetch data");
 
-    await message.react("🕰️"); // Indicate processing
+    const { result = "⚠️ Sorry, I couldn't find a result." } = await response.json();
+    return result;
+};
 
-    const apiUrl = `https://example.com/api?query=${encodeURIComponent(userQuery)}`;
+// Reply event handler
+async function reply({ eventData, message }) {
+    if (eventData.type !== "message") return;
+
+    const { body: userQuery } = message;
 
     try {
-        const response = await fetch(apiUrl);
-
-        if (!response.ok) throw new Error("⚠️ Failed to fetch data");
-
-        const { result = "⚠️ Sorry, I couldn't find a result." } = await response.json();
-
-        await message.reply(result); // Send back the result
+        await message.react("🕰️"); // Indicate processing
+        const result = await fetchApiData(userQuery);
+        await message.reply(result);
         await message.react("✔️"); // React with ✅ on success
     } catch (error) {
         console.error(error);
         await message.react("✖️"); // React with ❎ on error
-        await message.reply("⚠️ An error occurred while fetching the data."); // Error message
+        await message.reply("⚠️ An error occurred while fetching the data.");
+    }
+}
+
+async function onCall({ message, args }) {
+    const userQuery = args.join(" ").trim();
+    if (!userQuery) return message.reply("Please provide a query.");
+
+    try {
+        await message.react("🕰️"); // Indicate processing
+        const result = await fetchApiData(userQuery);
+        await message.reply(result);
+        await message.react("✔️"); // React with ✅ on success
+
+        // Attach reply event handler for follow-up messages
+        message.addReplyEvent({ callback: reply, type: "message", uid: message.senderID });
+    } catch (error) {
+        console.error(error);
+        await message.react("✖️"); // React with ❎ on error
+        await message.reply("⚠️ An error occurred while fetching the data.");
     }
 }
 
 export default {
     config,
-    onCall,
+    onCall
 };
