@@ -44,11 +44,11 @@ async function onCall({ message, args }) {
     try {
         await message.react("🕰️"); // Indicate processing
         const result = await fetchApiData(userQuery);
-        await message.reply(result);
+        const msg = await message.reply(result);
         await message.react("✔️"); // React with ✅ on success
 
         // Attach reply event handler for follow-up messages
-        message.addReplyEvent({ callback: reply, type: "message", uid: message.senderID });
+        msg.addReplyEvent({ callback: reply, type: "message", uid: message.senderID });
     } catch (error) {
         console.error(error);
         await message.react("✖️"); // React with ❎ on error
