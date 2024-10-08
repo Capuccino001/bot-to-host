@@ -35,7 +35,7 @@ async function onCall({ message, args }) {
         callback: onReply,
         type: "message",
         callbackData: {
-            answer: randomWord,
+            shuffledWord,
             uid: message.senderID,
         },
     });
@@ -46,7 +46,8 @@ async function onReply({ eventData, message, callbackData }) {
     if (eventData.type !== "message") return;
 
     const { body: userAnswer } = message;
-    const correctAnswer = callbackData.answer;
+    const words = JSON.parse(fs.readFileSync('words.json'));
+    const correctAnswer = words.find(word => shuffleWord(word) === callbackData.shuffledWord);
 
     if (formatText(userAnswer) === formatText(correctAnswer)) {
         const reward = Math.floor(Math.random() * (100 - 50 + 1) + 50);
