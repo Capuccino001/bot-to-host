@@ -28,7 +28,7 @@ async function onCall({ message, args }) {
     const randomWord = words[Math.floor(Math.random() * words.length)];
     const shuffledWord = shuffleWord(randomWord);
 
-    await message.reply(`Unscramble this word: "${shuffledWord}"`);
+    const msg = await message.reply(`Unscramble this word: "${shuffledWord}"`);
 
     // Attach reply event handler for user's answer
     msg.addReplyEvent({
