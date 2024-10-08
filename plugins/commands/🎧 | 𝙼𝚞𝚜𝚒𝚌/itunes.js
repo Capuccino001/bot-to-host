@@ -10,7 +10,7 @@ const config = {
     credits: "Vex_Kshitiz/coffee",
     description: "Search for a song on iTunes and send the audio",
     usages: "<song-name>",
-    permission: "0",
+    permission: [1, 2],
     cooldown: 10
 };
 
