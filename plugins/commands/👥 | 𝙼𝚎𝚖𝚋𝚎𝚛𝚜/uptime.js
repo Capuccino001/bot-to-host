@@ -1,7 +1,9 @@
+import os from 'os';
+
 const config = {
     name: "uptime",
     aliases: ["upt"],
-    credits: "XaviaTeam"
+    credits: "coffee"
 }
 
 function msToHMS(ms) {
@@ -11,12 +13,18 @@ function msToHMS(ms) {
     let minutes = Math.floor(seconds / 60);
     seconds = seconds % 60;
 
-    return `${hours} Hrs ${minutes} mins ${seconds} secs...`;
+    return {
+        hours: hours,
+        minutes: minutes,
+        seconds: seconds
+    };
 }
 
 function onCall({ message }) {
-    let uptime = msToHMS(process.uptime() * 1000);
-    message.reply(`(⁠ ⁠˘⁠ ⁠³⁠˘⁠)┌旦「 𝙾𝚗𝚕𝚒𝚗𝚎 」\n${uptime}`);
+    const botUptime = msToHMS(process.uptime() * 1000);
+    const serverUptime = msToHMS(os.uptime() * 1000); // Get server uptime
+
+    message.reply(`────────────────\n»  (⁠ ⁠˘⁠ ⁠³⁠˘⁠)┌旦「 𝙾𝚗𝚕𝚒𝚗𝚎 」«\n[ 𝚂𝚎𝚛𝚟𝚎𝚛 ] ${serverUptime.hours} Hours ${serverUptime.minutes} minutes\n[ 𝙱𝚘𝚝 ] ${botUptime.hours} Hours ${botUptime.minutes} minutes\n────── >ᴗ< ───────`);
 }
 
 export default {
