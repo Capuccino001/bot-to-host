@@ -7,7 +7,7 @@ const config = {
     usage: "[start]",
     cooldown: 5,
     permissions: [1, 2],
-    credits: "AceGerome",
+    credits: "AceGerome/coffee", 
 };
 
 const shuffleWord = (word) => {
