@@ -71,12 +71,10 @@ const onCall = async ({ message, args, getLang }) => {
 🔗 [Listen on iTunes](${url})
         `;
 
+        // Send the song details and audio track
         await message.reply({
             body: songInfo,
-            attachment: [
-                { url: thumbnail },
-                { attachment: fs.createReadStream(filePath) } // Send the actual song as an attachment
-            ]
+            attachment: fs.createReadStream(filePath) // Send the actual song as a readable stream
         });
 
         // Delete the downloaded file after sending
