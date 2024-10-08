@@ -34,8 +34,10 @@ async function onCall({ message, args }) {
     msg.addReplyEvent({
         callback: onReply,
         type: "message",
-        answer: randomWord,
-        uid: message.senderID,
+        callbackData: {
+            answer: randomWord,
+            uid: message.senderID,
+        },
     });
 }
 
