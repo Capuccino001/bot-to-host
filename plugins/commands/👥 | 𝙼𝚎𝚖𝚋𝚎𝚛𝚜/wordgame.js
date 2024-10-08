@@ -25,7 +25,8 @@ const formatText = (text) => {
 // Start the word game
 async function onCall({ message, args }) {
     const words = JSON.parse(fs.readFileSync('words.json'));
-    const randomWord = words[Math.floor(Math.random() * words.length)];
+    const randomIndex = Math.floor(Math.random() * words.length);
+    const randomWord = words[randomIndex];
     const shuffledWord = shuffleWord(randomWord);
 
     const msg = await message.reply(`Unscramble this word: "${shuffledWord}"`);
@@ -35,7 +36,7 @@ async function onCall({ message, args }) {
         callback: onReply,
         type: "message",
         callbackData: {
-            shuffledWord,
+            index: randomIndex,
             uid: message.senderID,
         },
     });
@@ -47,7 +48,7 @@ async function onReply({ eventData, message, callbackData }) {
 
     const { body: userAnswer } = message;
     const words = JSON.parse(fs.readFileSync('words.json'));
-    const correctAnswer = words.find(word => shuffleWord(word) === callbackData.shuffledWord);
+    const correctAnswer = words[callbackData.index];
 
     if (formatText(userAnswer) === formatText(correctAnswer)) {
         const reward = Math.floor(Math.random() * (100 - 50 + 1) + 50);
