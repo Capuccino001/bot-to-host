@@ -22,6 +22,8 @@ const formatText = (text) => {
     return text.normalize("NFD").toLowerCase();
 };
 
+let currentGame = null;
+
 // Start the word game
 async function onCall({ message, args }) {
     const words = JSON.parse(fs.readFileSync('words.json'));
@@ -29,26 +31,29 @@ async function onCall({ message, args }) {
     const randomWord = words[randomIndex];
     const shuffledWord = shuffleWord(randomWord);
 
+    currentGame = {
+        index: randomIndex,
+        uid: message.senderID,
+    };
+
     const msg = await message.reply(`Unscramble this word: "${shuffledWord}"`);
 
     // Attach reply event handler for user's answer
     msg.addReplyEvent({
         callback: onReply,
         type: "message",
-        callbackData: {
-            index: randomIndex,
-            uid: message.senderID,
-        },
     });
 }
 
 // Handle user replies to the word game
-async function onReply({ eventData, message, callbackData }) {
+async function onReply({ eventData, message }) {
     if (eventData.type !== "message") return;
 
-    const { body: userAnswer } = message;
+    if (!currentGame || currentGame.uid !== message.senderID) return;
+
     const words = JSON.parse(fs.readFileSync('words.json'));
-    const correctAnswer = words[callbackData.index];
+    const correctAnswer = words[currentGame.index];
+    const { body: userAnswer } = message;
 
     if (formatText(userAnswer) === formatText(correctAnswer)) {
         const reward = Math.floor(Math.random() * (100 - 50 + 1) + 50);
@@ -56,6 +61,8 @@ async function onReply({ eventData, message, callbackData }) {
     } else {
         await message.reply("Incorrect answer. Try again!");
     }
+
+    currentGame = null;
 }
 
 export default {
