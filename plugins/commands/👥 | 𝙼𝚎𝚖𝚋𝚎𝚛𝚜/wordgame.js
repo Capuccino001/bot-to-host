@@ -31,7 +31,7 @@ async function onCall({ message, args }) {
     await message.reply(`Unscramble this word: "${shuffledWord}"`);
 
     // Attach reply event handler for user's answer
-    message.addReplyEvent({
+    msg.addReplyEvent({
         callback: onReply,
         type: "message",
         answer: randomWord,
