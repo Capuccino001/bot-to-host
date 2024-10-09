@@ -83,8 +83,7 @@ const onCall = async ({ message }) => {
       imgData.push(stream);
     }));
 
-    const replyMessages = "(⁠｢⁠`⁠･⁠ω⁠･⁠)⁠｢ | 𝐆𝐨𝐨𝐠𝐥𝐞 𝐋𝐞𝐧𝐬 
-・──────────────・\n\n" + results.map((item, index) => 
+    const replyMessages = "(⁠｢`･⁠ω⁠･⁠)⁠｢ | 𝐆𝐨𝐨𝐠𝐥𝐞 𝐋𝐞𝐧𝐬 \n・──────────────・\n\n" + results.map((item, index) => 
       `${index + 1}. ${toBoldFont("Title:")} ${item.title}\n${toBoldFont("Source:")} ${item.source}\n${toBoldFont("Link:")} ${item.link}`
     ).join("\n\n");
 
