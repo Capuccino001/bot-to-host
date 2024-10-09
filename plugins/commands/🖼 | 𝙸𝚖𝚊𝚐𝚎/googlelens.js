@@ -82,7 +82,7 @@ async function reply({ message }) {
         // Send the reply message with the formatted text and attachments
         await message.reply({
             body: replyMessages,
-            attachment: attachmentsToSend
+            attachments: attachmentsToSend // Use the attachments property instead of attachment
         });
 
         await message.react("✔️"); // React with ✅ on success
