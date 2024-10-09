@@ -2,6 +2,10 @@ import fetch from 'node-fetch';
 import axios from 'axios';
 import { createReadStream, writeFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = join(__filename, '..');
 
 const config = {
   name: "googlelens",
@@ -60,7 +64,7 @@ const onCall = async ({ message }) => {
   try {
     await message.react("🕰️"); // Indicate processing
     const results = await fetchGoogleLensData(imageUrl);
-    
+
     const imgData = [];
     for (let i = 0; i < results.length; i++) {
       const imageBuffer = await downloadImageAsStream(results[i].thumbnail);
@@ -97,4 +101,3 @@ export default {
   config,
   onCall
 };
-
