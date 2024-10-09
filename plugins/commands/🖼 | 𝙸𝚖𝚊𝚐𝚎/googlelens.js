@@ -71,8 +71,8 @@ const onCall = async ({ message }) => {
       imgData.push(imageBuffer);
     }
 
-    const replyMessages = results.map(item => 
-      `${toBoldFont("Title:")} ${item.title}\n${toBoldFont("Source:")} ${item.source}\n${toBoldFont("Link:")} [View](${item.link})`
+    const replyMessages = results.map((item, index) => 
+      `${index + 1}. ${toBoldFont("Title:")} ${item.title}\n${toBoldFont("Source:")} ${item.source}\n${toBoldFont("Link:")} ${item.link}`
     ).join("\n\n");
 
     await message.react("✔️"); // React with ✔️ on success
