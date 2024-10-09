@@ -152,29 +152,8 @@ export default async function subscribe({ event }) {
         mentions,
     };
 
-    const gifPath = `${global.mainPath}/plugins/events/subscribeGifs/${threadID}.gif`;
-
     if (logMessageData.addedParticipants.length == 1 && warns.length == 0) {
-        const profilePicUrl = global.utils.getAvatarURL(
-            logMessageData.addedParticipants[0].userFbId
-        );
-
-        const username = logMessageData.addedParticipants[0].fullName;
-        const welcomeCard = await global.utils
-            .getStream(
-                `${
-                    global.xva_api.popcat
-                }/welcomecard?background=https://cdn.popcat.xyz/welcome-bg.png&text1=${encodeURIComponent(
-                    username
-                )}&text2=Welcome+To+${encodeURIComponent(
-                    getThreadInfo.name || threadID
-                )}&text3=Member+${newCount[0]}&avatar=${encodeURIComponent(
-                    profilePicUrl
-                )}`
-            )
-            .catch(() => null);
-
-        if (welcomeCard) alertMsg.attachment = [welcomeCard];
+        alertMsg.attachment = ["https://i.ibb.co/q0XgVqF/xva213.gif"];
     }
 
     if (!alertMsg.attachment && global.isExists(gifPath)) {
