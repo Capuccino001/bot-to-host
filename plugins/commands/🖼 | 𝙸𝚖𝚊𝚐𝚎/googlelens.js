@@ -69,16 +69,17 @@ const onCall = async ({ message }) => {
 
   const imageUrl = attachments[0].url; // Extract the image URL
 
+  const cacheFiles = []; // Define cacheFiles here
+
   try {
     await message.react("🕰️"); // Indicate processing
     const results = await fetchGoogleLensData(imageUrl);
 
-    const cacheFiles = [];
     const imgData = [];
 
     await Promise.all(results.map(async (result) => {
       const { path, stream } = await downloadImageAsStream(result.thumbnail);
-      cacheFiles.push(path);
+      cacheFiles.push(path); // Add path to cacheFiles
       imgData.push(stream);
     }));
 
