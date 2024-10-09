@@ -1,119 +1,74 @@
-import fetch from 'node-fetch'; // Ensure you have node-fetch installed
-import axios from 'axios'; // Ensure you have axios installed
-import { createReadStream, createWriteStream, existsSync, mkdirSync, unlinkSync } from 'fs';
+import { writeFileSync, existsSync, mkdirSync, createReadStream, unlinkSync } from 'fs';
 import { join } from 'path';
+import axios from 'axios';
+import { fileURLToPath } from 'url';
+
+const __dirname = join(fileURLToPath(import.meta.url), '..');
 
 const config = {
-    name: "googlelens",
-    aliases: ["glens"],
-    description: "Fetches information about an image using Google Lens.",
-    usage: "[reply to an image message]",
-    cooldown: 3,
-    permissions: [1, 2],
+    name: "remini",
+    aliases: [],
+    version: "2.0",
+    description: "Enhance the image quality",
+    usage: "(reply to an image)",
+    cooldown: 20,
+    permissions: [0],
     credits: "Coffee",
 };
 
-// Bold font mapping
-const boldFontMap = {
-    ' ': ' ',
-    'a': '𝐚', 'b': '𝐛', 'c': '𝐜', 'd': '𝐝', 'e': '𝐞', 'f': '𝐟', 'g': '𝐠', 'h': '𝐡',
-    'i': '𝐢', 'j': '𝐣', 'k': '𝐤', 'l': '𝐥', 'm': '𝐦', 'n': '𝐧', 'o': '𝐨', 'p': '𝐩', 'q': '𝐪',
-    'r': '𝐫', 's': '𝐬', 't': '𝐭', 'u': '𝐮', 'v': '𝐯', 'w': '𝐰', 'x': '𝐱', 'y': '𝐲', 'z': '𝐳',
-    'A': '𝐀', 'B': '𝐁', 'C': '𝐂', 'D': '𝐃', 'E': '𝐄', 'F': '𝐅', 'G': '𝐆', 'H': '𝐇',
-    'I': '𝐈', 'J': '𝐉', 'K': '𝐊', 'L': '𝐋', 'M': '𝐌', 'N': '𝐍', 'O': '𝐎', 'P': '𝐏', 'Q': '𝐐',
-    'R': '𝐑', 'S': '𝐒', 'T': '𝐓', 'U': '𝐔', 'V': '𝐕', 'W': '𝐖', 'X': '𝐗', 'Y': '𝐘', 'Z': '𝐙',
-};
+async function onCall({ message, api }) {
+    const { messageReply } = message; // Get messageReply directly from the message
+    const { attachments, threadID } = messageReply || {};
 
-// Function to convert text to bold font
-const toBoldFont = (text) => {
-    return text.split('').map(char => boldFontMap[char] || char).join('');
-};
-
-// Function to fetch data from Google Lens API and handle response
-const fetchGoogleLensData = async (imageUrl) => {
-    const apiUrl = `https://deku-rest-apis.ooguy.com/api/glens?url=${encodeURIComponent(imageUrl)}`;
-
-    const response = await fetch(apiUrl);
-    if (!response.ok) throw new Error("⚠️ Failed to fetch data");
-
-    const { status, data } = await response.json();
-    if (!status || !data.length) throw new Error("⚠️ No results found.");
-
-    return data.slice(0, 6); // Limit results to 6
-};
-
-// Function to download image as a stream
-const downloadImageAsStream = async (url) => {
-    const response = await axios.get(url, { responseType: 'stream' });
-    return response.data; // This is a readable stream
-};
-
-// Reply event handler
-async function reply({ message }) {
-    const { messageReply } = message; // Get the replied message
-    const { attachments } = messageReply || {};
-
-    if (!attachments || !attachments.length || !["photo", "sticker"].includes(attachments[0]?.type)) {
-        await message.reply("⚠️ No image found in the replied message.");
-        return;
+    if (!attachments || !["photo", "sticker"].includes(attachments[0]?.type)) {
+        return await message.reply("❌ | Please reply to an image.");
     }
 
-    const imageUrl = attachments[0].url; // Extract the image URL
+    const { url: imageUrl } = attachments[0] || {};
 
     try {
-        await message.react("🕰️"); // Indicate processing
-        const results = await fetchGoogleLensData(imageUrl);
-        
-        const replyMessages = results.map(item => 
-            `${toBoldFont("Title:")} ${item.title}\n${toBoldFont("Source:")} ${item.source}\n${toBoldFont("Link:")} [View](${item.link})`
-        ).join("\n\n");
+        await message.react("🕰️");
 
-        // Prepare cache directory for thumbnails
+        // Make API request to enhance image
+        const { data } = await axios.get(`https://vex-kshitiz.vercel.app/upscale?url=${encodeURIComponent(imageUrl)}`, {
+            responseType: "json"
+        });
+
+        if (!data.result_url) {
+            throw new Error("No result_url in API response.");
+        }
+
+        // Download enhanced image
+        const enhancedImageUrl = data.result_url;
+        const imageResponse = await axios.get(enhancedImageUrl, { responseType: "arraybuffer" });
+
+        // Prepare cache directory and save the enhanced image
         const cacheDir = join(__dirname, "cache");
         if (!existsSync(cacheDir)) {
             mkdirSync(cacheDir, { recursive: true });
         }
 
-        // Download thumbnails and save them
-        const attachmentsToSend = await Promise.all(results.map(async (item) => {
-                        const stream = await downloadImageAsStream(item.thumbnail);
-            const imagePath = join(cacheDir, `${item.title.replace(/\s+/g, '_')}.jpg`);
-            const writer = createWriteStream(imagePath);
-            stream.pipe(writer);
+        const imagePath = join(cacheDir, "remi_image.png");
+        writeFileSync(imagePath, imageResponse.data);
 
-            return new Promise((resolve, reject) => {
-                writer.on('finish', () => resolve(createReadStream(imagePath)));
-                writer.on('error', reject);
-            });
-        }));
-
-        // Send the reply message with the formatted text and attachments
+        // Send the enhanced image with a completion message
         await message.reply({
-            body: replyMessages,
-            attachment: attachmentsToSend
-        });
+            body: "✅ Image enhancement complete!",
+            attachment: createReadStream(imagePath)
+        }, threadID);
 
-        // Cleanup: Delete temporary image files after sending
-        attachmentsToSend.forEach((_, index) => {
-            const imagePath = join(cacheDir, `${results[index].title.replace(/\s+/g, '_')}.jpg`);
-            unlinkSync(imagePath);
-        });
+        // Delete the temporary image file after sending
+        unlinkSync(imagePath);
 
-        await message.react("✔️"); // React with ✅ on success
+        await message.react("✔️");
     } catch (error) {
-        console.error(error);
-        await message.react("✖️"); // React with ❎ on error
-        await message.reply("⚠️ An error occurred while fetching the data.");
+        console.error("Error enhancing image: ", error);
+        await message.react("✖️");
+        await message.reply("❌ | Error occurred while enhancing image.");
     }
-}
-
-async function onCall({ message }) {
-    // This command does not need to handle arguments directly
-    // It will rely on the reply event handler
-    await reply({ message });
 }
 
 export default {
     config,
-    onCall
+    onCall,
 };
