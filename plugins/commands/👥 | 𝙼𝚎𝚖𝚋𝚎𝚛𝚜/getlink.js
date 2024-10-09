@@ -11,13 +11,16 @@ const config = {
 
 const supportedType = ["photo", "animated_image"];
 
+// Hard-coded API key (not recommended for production)
+const IMGBB_KEY = "00b9e5f22d4cbe751f9bafaddd5696ec"; // Replace with your actual API key
+
 async function upload(url) {
     try {
         const response = await axios.post(
             `${global.xva_api.main}/imgbb`,
             {
                 url: url,
-                apikey: process.env.IMGBB_KEY
+                apikey: IMGBB_KEY // Use the hard-coded API key here
             }
         );
         return response.data.url;
@@ -28,10 +31,6 @@ async function upload(url) {
 }
 
 async function onCall({ message }) {
-    if (!process.env.IMGBB_KEY) {
-        return message.reply("Please set IMGBB_KEY in the environment variables");
-    }
-
     try {
         const { type, messageReply } = message;
 
