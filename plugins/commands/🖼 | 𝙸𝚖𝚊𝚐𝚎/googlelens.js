@@ -1,3 +1,5 @@
+import fetch from 'node-fetch'; // Ensure you have node-fetch installed
+
 const config = {
     name: "googlelens",
     aliases: ["glens"],
@@ -22,16 +24,16 @@ const fetchGoogleLensData = async (imageUrl) => {
 };
 
 // Reply event handler
-async function reply({ eventData, message }) {
-    if (eventData.type !== "message" || !message.replyTo) return;
+async function reply({ message }) {
+    const { messageReply } = message; // Get the replied message
+    const { attachments } = messageReply || {};
 
-    const originalMessage = message.replyTo; // Get the original message
-    const imageUrl = originalMessage.attachments[0]?.url; // Extract the image URL
-
-    if (!imageUrl) {
+    if (!attachments || !attachments.length || !["photo", "sticker"].includes(attachments[0]?.type)) {
         await message.reply("⚠️ No image found in the replied message.");
         return;
     }
+
+    const imageUrl = attachments[0].url; // Extract the image URL
 
     try {
         await message.react("🕰️"); // Indicate processing
@@ -49,10 +51,10 @@ async function reply({ eventData, message }) {
     }
 }
 
-async function onCall({ message, args }) {
+async function onCall({ message }) {
     // This command does not need to handle arguments directly
     // It will rely on the reply event handler
-    await reply({ eventData: { type: "message" }, message });
+    await reply({ message });
 }
 
 export default {
