@@ -1,4 +1,8 @@
 import fetch from 'node-fetch'; // Ensure you have node-fetch installed
+import axios from 'axios'; // Ensure you have axios installed
+import { createReadStream } from 'fs';
+import { join } from 'path';
+import { writeFileSync, unlinkSync } from 'fs';
 
 const config = {
     name: "googlelens",
@@ -39,6 +43,12 @@ const fetchGoogleLensData = async (imageUrl) => {
     return data.slice(0, 6); // Limit results to 6
 };
 
+// Function to download image as a stream
+const downloadImageAsStream = async (url) => {
+    const response = await axios.get(url, { responseType: 'stream' });
+    return response.data; // This is a readable stream
+};
+
 // Reply event handler
 async function reply({ message }) {
     const { messageReply } = message; // Get the replied message
@@ -59,12 +69,17 @@ async function reply({ message }) {
             `${toBoldFont("Title:")} ${item.title}\n${toBoldFont("Source:")} ${item.source}\n${toBoldFont("Link:")} [View](${item.link})`
         ).join("\n\n");
 
-        // Prepare thumbnails as attachments
-        const attachmentsToSend = results.map(item => ({
-            url: item.thumbnail,
-            type: 'image'
+        // Prepare thumbnails as streams
+        const attachmentsToSend = await Promise.all(results.map(async (item) => {
+            const stream = await downloadImageAsStream(item.thumbnail);
+            return {
+                body: stream,
+                filename: `${item.title.replace(/\s+/g, '_')}.jpg`, // Use a sanitized filename
+                type: 'image/jpeg' // Specify the type of the attachment
+            };
         }));
 
+        // Send the reply message with the formatted text and attachments
         await message.reply({
             body: replyMessages,
             attachment: attachmentsToSend
