@@ -61,11 +61,12 @@ const onCall = async ({ message }) => {
 
   const imageUrl = attachments[0].url; // Extract the image URL
 
+  let imgData = []; // Define imgData here
+
   try {
     await message.react("🕰️"); // Indicate processing
     const results = await fetchGoogleLensData(imageUrl);
 
-    const imgData = [];
     for (let i = 0; i < results.length; i++) {
       const imageBuffer = await downloadImageAsStream(results[i].thumbnail);
       imgData.push(imageBuffer);
