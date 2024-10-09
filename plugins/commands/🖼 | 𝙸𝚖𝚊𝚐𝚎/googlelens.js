@@ -32,19 +32,15 @@ const toBoldFont = (text) => {
 };
 
 const fetchGoogleLensData = async (imageUrl) => {
-  const apiUrl = `https://deku-rest-apis.ooguy.com/api/glens?url=${encodeURIComponent(imageUrl)}`;
-
   try {
-    const response = await fetch(apiUrl);
+    const response = await fetch(`https://deku-rest-apis.ooguy.com/api/glens?url=${encodeURIComponent(imageUrl)}`);
     if (!response.ok) {
       throw new Error("⚠️ Failed to fetch data");
     }
-
     const { status, data } = await response.json();
     if (!status || !data.length) {
       throw new Error("⚠️ No results found.");
     }
-
     return data.slice(0, 6); // Limit results to 6
   } catch (error) {
     throw error;
@@ -80,11 +76,11 @@ const onCall = async ({ message }) => {
     const cacheFiles = [];
     const imgData = [];
 
-    for (let i = 0; i < results.length; i++) {
-      const { path, stream } = await downloadImageAsStream(results[i].thumbnail);
+    await Promise.all(results.map(async (result) => {
+      const { path, stream } = await downloadImageAsStream(result.thumbnail);
       cacheFiles.push(path);
       imgData.push(stream);
-    }
+    }));
 
     const replyMessages = results.map((item, index) => 
       `${index + 1}. ${toBoldFont("Title:")} ${item.title}\n${toBoldFont("Source:")} ${item.source}\n${toBoldFont("Link:")} ${item.link}`
@@ -100,13 +96,13 @@ const onCall = async ({ message }) => {
     await message.react("✖️"); // React with ✖️ on error
     await message.reply("⚠️ An error occurred while fetching the data.");
   } finally {
-    for (let i = 0; i < cacheFiles.length; i++) {
+    await Promise.all(cacheFiles.map(async (file) => {
       try {
-        unlinkSync(cacheFiles[i]);
+        unlinkSync(file);
       } catch (error) {
-        console.error(`[ERROR] Failed to delete cache file: ${cacheFiles[i]}\n`, error);
+        console.error(`[ERROR] Failed to delete cache file: ${file}\n`, error);
       }
-    }
+    }));
   }
 };
 
