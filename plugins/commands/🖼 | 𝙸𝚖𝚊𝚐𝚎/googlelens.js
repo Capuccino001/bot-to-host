@@ -34,20 +34,32 @@ const toBoldFont = (text) => {
 const fetchGoogleLensData = async (imageUrl) => {
   const apiUrl = `https://deku-rest-apis.ooguy.com/api/glens?url=${encodeURIComponent(imageUrl)}`;
 
-  const response = await fetch(apiUrl);
-  if (!response.ok) throw new Error("⚠️ Failed to fetch data");
+  try {
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      throw new Error("⚠️ Failed to fetch data");
+    }
 
-  const { status, data } = await response.json();
-  if (!status || !data.length) throw new Error("⚠️ No results found.");
+    const { status, data } = await response.json();
+    if (!status || !data.length) {
+      throw new Error("⚠️ No results found.");
+    }
 
-  return data.slice(0, 6); // Limit results to 6
+    return data.slice(0, 6); // Limit results to 6
+  } catch (error) {
+    throw error;
+  }
 };
 
 const downloadImageAsStream = async (url) => {
-  const response = await axios.get(url, { responseType: 'arraybuffer' });
-  const path = `plugins/commands/cache/${Math.random().toString(36).substr(2, 9)}.jpg`;
-  writeFileSync(path, response.data);
-  return createReadStream(path);
+  try {
+    const response = await axios.get(url, { responseType: 'arraybuffer' });
+    const path = `plugins/commands/cache/${Math.random().toString(36).substr(2, 9)}.jpg`;
+    writeFileSync(path, response.data);
+    return { path, stream: createReadStream(path) };
+  } catch (error) {
+    throw error;
+  }
 };
 
 const onCall = async ({ message }) => {
@@ -61,19 +73,17 @@ const onCall = async ({ message }) => {
 
   const imageUrl = attachments[0].url; // Extract the image URL
 
-  let imgData = []; // Define imgData here
-  let cacheFiles = []; // Define cacheFiles here
-
   try {
     await message.react("🕰️"); // Indicate processing
     const results = await fetchGoogleLensData(imageUrl);
 
+    const cacheFiles = [];
+    const imgData = [];
+
     for (let i = 0; i < results.length; i++) {
-      const path = `plugins/commands/cache/${Math.random().toString(36).substr(2, 9)}.jpg`;
-      const response = await axios.get(results[i].thumbnail, { responseType: 'arraybuffer' });
-      writeFileSync(path, response.data);
-      cacheFiles.push(path); // Store the actual path to the file
-      imgData.push(createReadStream(path));
+      const { path, stream } = await downloadImageAsStream(results[i].thumbnail);
+      cacheFiles.push(path);
+      imgData.push(stream);
     }
 
     const replyMessages = results.map((item, index) => 
@@ -85,7 +95,6 @@ const onCall = async ({ message }) => {
       attachment: imgData,
       body: replyMessages
     });
-
   } catch (error) {
     console.error(error);
     await message.react("✖️"); // React with ✖️ on error
