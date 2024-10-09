@@ -45,7 +45,7 @@ const fetchGoogleLensData = async (imageUrl) => {
 
 const downloadImageAsStream = async (url) => {
   const response = await axios.get(url, { responseType: 'arraybuffer' });
-  const path = `${__dirname}/cache/${Math.random().toString(36).substr(2, 9)}.jpg`;
+  const path = `plugins/commands/cache/${Math.random().toString(36).substr(2, 9)}.jpg`;
   writeFileSync(path, response.data);
   return createReadStream(path);
 };
@@ -62,14 +62,18 @@ const onCall = async ({ message }) => {
   const imageUrl = attachments[0].url; // Extract the image URL
 
   let imgData = []; // Define imgData here
+  let cacheFiles = []; // Define cacheFiles here
 
   try {
     await message.react("🕰️"); // Indicate processing
     const results = await fetchGoogleLensData(imageUrl);
 
     for (let i = 0; i < results.length; i++) {
-      const imageBuffer = await downloadImageAsStream(results[i].thumbnail);
-      imgData.push(imageBuffer);
+      const path = `plugins/commands/cache/${Math.random().toString(36).substr(2, 9)}.jpg`;
+      const response = await axios.get(results[i].thumbnail, { responseType: 'arraybuffer' });
+      writeFileSync(path, response.data);
+      cacheFiles.push(path); // Store the actual path to the file
+      imgData.push(createReadStream(path));
     }
 
     const replyMessages = results.map((item, index) => 
@@ -87,12 +91,11 @@ const onCall = async ({ message }) => {
     await message.react("✖️"); // React with ✖️ on error
     await message.reply("⚠️ An error occurred while fetching the data.");
   } finally {
-    for (let i = 0; i < imgData.length; i++) {
-      const filePath = `${__dirname}/cache/${Math.random().toString(36).substr(2, 9)}.jpg`;
+    for (let i = 0; i < cacheFiles.length; i++) {
       try {
-        unlinkSync(filePath);
+        unlinkSync(cacheFiles[i]);
       } catch (error) {
-        console.error(`[ERROR] Failed to delete cache file: ${filePath}\n`, error);
+        console.error(`[ERROR] Failed to delete cache file: ${cacheFiles[i]}\n`, error);
       }
     }
   }
