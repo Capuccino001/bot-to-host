@@ -14,6 +14,7 @@ const config = {
   usages: '<song name>',
   category: 'Music',
   cooldown: 10,
+  permissions: [1, 2],
 };
 
 const __filename = fileURLToPath(import.meta.url);
