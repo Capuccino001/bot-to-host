@@ -99,7 +99,7 @@ const onCall = async ({ message, args, getLang }) => {
 
   try {
     await ensureCacheFolderExists();
-    await message.react("⌛");
+    await message.react("🕰️");
 
     const trackURLs = await fetchTrackURLs(songTitle);
     if (!trackURLs.length) {
