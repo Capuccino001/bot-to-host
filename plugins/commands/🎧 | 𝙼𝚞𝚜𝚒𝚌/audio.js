@@ -125,12 +125,12 @@ async function downloadThumbnails(urls) {
     }
 }
 
-async function onCall({ message, args, extra }) {
+async function onCall({ message, args, extra = {} }) {
     try {
         if (!args[0]) return message.reply("Please provide keyword or an url");
         let url = args[0];
         if (!url.match(/^(http(s)?:\/\/)?((w){3}.)?youtu(be|.be)?(\.com)?\/.+/)) {
-            let data = await searchByKeyword(args.join(" "), extra.MAX_SONGS);
+            let data = await searchByKeyword(args.join(" "), extra.MAX_SONGS || 6);
             if (!data[0]) return message.reply("No result found");
             const items = data;
             const songs = [], attachments = [];
