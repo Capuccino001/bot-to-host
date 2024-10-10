@@ -129,12 +129,12 @@ const onCall = async ({ message, args, getLang }) => {
     const attachment = fs.createReadStream(filePath);
 
     const messageBody = `🎵 | Title: ${title}\n🎤 | Artist: ${author.name}\n\n${lyrics}`;
-    const message = {
+    const replyMessage = {
       body: messageBody,
       attachment: attachment
     };
 
-    await message.reply(message);
+    await message.reply(replyMessage);
     fs.unlinkSync(filePath);
   } catch (error) {
     console.error('Error occurred:', error);
