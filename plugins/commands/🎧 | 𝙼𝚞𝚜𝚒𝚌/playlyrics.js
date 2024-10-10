@@ -134,12 +134,25 @@ const onCall = async ({ message, args, getLang }) => {
       attachment: attachment
     };
 
-    await message.reply(replyMessage);
-    fs.unlinkSync(filePath);
+    try {
+      await message.reply(replyMessage);
+    } catch (error) {
+      console.error('Error replying to message:', error);
+    }
+
+    try {
+      fs.unlinkSync(filePath);
+    } catch (error) {
+      console.error('Error deleting file:', error);
+    }
   } catch (error) {
     console.error('Error occurred:', error);
     const errorMessage = `An error occurred: ${error.message}`;
-    await message.reply(errorMessage);
+    try {
+      await message.reply(errorMessage);
+    } catch (error) {
+      console.error('Error replying to error message:', error);
+    }
   }
 };
 
