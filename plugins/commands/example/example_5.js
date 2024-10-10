@@ -1,28 +1,80 @@
+import axios from 'axios';
+import fs from 'fs-extra';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
 const config = {
-    name: "exampledefault2",
-    aliases: ["exd2"], // name and alias are same
-    description: "This is an example command",
-    usage: "[query]",
-    cooldown: 3,
-    permissions: [1, 2],
-    credits: "Coffee",
+  name: "example",
+  aliases: ["ex"],
+  version: "1.0",
+  credits: "Your Name",
+  description: "Example command template",
+  usages: "<query>",
+  category: "Example",
+  cooldown: 10
 };
 
-async function onCall({ message, args }) {
-    const msgData = await message.send("This is an example message");
-    msgData.addReactEvent({ callback: onReaction });
-    msgData.addReplyEvent({ callback: onReply });
-}
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const cacheFolder = `${__dirname}/cache`;
 
-async function onReply({ message }) {
-    // Handle reply events
-}
+// Ensure the cache folder exists
+const ensureCacheFolderExists = async () => {
+  try {
+    await fs.ensureDir(cacheFolder);
+  } catch (error) {
+    console.error('Error creating cache folder:', error);
+  }
+};
 
-async function onReaction({ message }) {
-    // Handle reaction events
-}
+// Placeholder API URL
+const apiURL = "https://example-api.com/api";
+
+// Placeholder API endpoint
+const apiEndpoint = "/example-endpoint";
+
+// API request function
+const makeApiRequest = async (query) => {
+  try {
+    const response = await axios.get(`${apiURL}${apiEndpoint}`, {
+      params: {
+        query: query
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error making API request:", error);
+    throw error;
+  }
+};
+
+// Main function
+const onCall = async ({ message, args, getLang }) => {
+  const query = args.join(" ");
+
+  if (!query) {
+    return message.reply(`${header}${getLang("message")}${footer}`);
+  }
+
+  try {
+    await ensureCacheFolderExists();
+    await message.react("🕰️");
+
+    const apiResponse = await makeApiRequest(query);
+    const result = apiResponse.result;
+
+    await message.reply({
+      body: `Result: ${result}`
+    });
+
+    console.log("API response sent successfully.");
+  } catch (error) {
+    console.error("Error occurred:", error);
+    await message.reply(`${header}An error occurred: ${error.message}${footer}`);
+  }
+};
 
 export default {
-    config,
-    onCall,
+  config,
+  onCall,
 };
