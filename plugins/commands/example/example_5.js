@@ -4,14 +4,14 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
 const config = {
-  name: "example",
-  aliases: ["ex"],
-  version: "1.0",
-  credits: "Your Name",
-  description: "Example command template",
-  usages: "<query>",
-  category: "Example",
-  cooldown: 10
+  name: 'example',
+  aliases: ['ex'],
+  version: '1.0',
+  credits: 'Your Name',
+  description: 'Example command template',
+  usages: '<query>',
+  category: 'Example',
+  cooldown: 10,
 };
 
 const __filename = fileURLToPath(import.meta.url);
@@ -28,49 +28,55 @@ const ensureCacheFolderExists = async () => {
 };
 
 // Placeholder API URL
-const apiURL = "https://example-api.com/api";
+const apiURL = 'https://example-api.com/api';
 
 // Placeholder API endpoint
-const apiEndpoint = "/example-endpoint";
+const apiEndpoint = '/example-endpoint';
 
 // API request function
 const makeApiRequest = async (query) => {
   try {
     const response = await axios.get(`${apiURL}${apiEndpoint}`, {
       params: {
-        query: query
-      }
+        query,
+      },
     });
     return response.data;
   } catch (error) {
-    console.error("Error making API request:", error);
+    console.error('Error making API request:', error);
     throw error;
   }
 };
 
 // Main function
 const onCall = async ({ message, args, getLang }) => {
-  const query = args.join(" ");
-
-  if (!query) {
-    return message.reply(`${header}${getLang("message")}${footer}`);
-  }
-
   try {
+    const query = args.join(' ');
+
+    if (!query) {
+      const errorMessage = `${getLang('message')}`;
+      return message.reply(errorMessage);
+    }
+
     await ensureCacheFolderExists();
-    await message.react("🕰️");
+    await message.react('🕰️');
 
     const apiResponse = await makeApiRequest(query);
     const result = apiResponse.result;
 
-    await message.reply({
-      body: `Result: ${result}`
-    });
+    if (!result) {
+      const errorMessage = 'No result found';
+      return message.reply(errorMessage);
+    }
 
-    console.log("API response sent successfully.");
+    const successMessage = `Result: ${result}`;
+    await message.reply(successMessage);
+
+    console.log('API response sent successfully.');
   } catch (error) {
-    console.error("Error occurred:", error);
-    await message.reply(`${header}An error occurred: ${error.message}${footer}`);
+    console.error('Error occurred:', error);
+    const errorMessage = `An error occurred: ${error.message}`;
+    await message.reply(errorMessage);
   }
 };
 
