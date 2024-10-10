@@ -3,6 +3,7 @@ import fluent from "fluent-ffmpeg"
 import ytdl from "@distube/ytdl-core"
 import { join } from "path";
 import { statSync } from "fs";
+import axios from 'axios';
 
 const _48MB = 48 * 1024 * 1024;
 
@@ -18,6 +19,12 @@ const config = {
         "MAX_SONGS": 6
     }
 }
+
+const userAgents = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.3',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.3',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.3',
+];
 
 function onLoad() {
     fluent.setFfmpegPath(ffmpegPath);
@@ -87,8 +94,13 @@ function formatDuration(duration) {
 
 async function getVideoInfo(id) {
     try {
-        const { data } = await global.GET(`${global.xva_api.main}/ytvideodetails?id=${id}`)
-        return data.result[0] || null;
+        const userAgent = userAgents[Math.floor(Math.random() * userAgents.length)];
+        const response = await axios.get(`${global.xva_api.main}/ytvideodetails?id=${id}`, {
+            headers: {
+                'User-Agent': userAgent,
+            },
+        });
+        return response.data.result[0] || null;
     } catch (err) {
         console.error(err);
         return null;
@@ -98,10 +110,13 @@ async function getVideoInfo(id) {
 async function searchByKeyword(keyword, MAX_SONGS) {
     try {
         if (!keyword) return [];
-        const { data } = await global.GET(`${global.xva_api.main}/ytsearch?keyword=${encodeURIComponent(keyword)}&maxResults=${MAX_SONGS}`);
-        if (!data?.result) return [];
-        return data.result;
-
+        const userAgent = userAgents[Math.floor(Math.random() * userAgents.length)];
+        const response = await axios.get(`${global.xva_api.main}/ytsearch?keyword=${encodeURIComponent(keyword)}&maxResults=${MAX_SONGS}`, {
+            headers: {
+                'User-Agent': userAgent,
+            },
+        });
+        return response.data.result || [];
     } catch (err) {
         throw err;
     }
@@ -109,7 +124,7 @@ async function searchByKeyword(keyword, MAX_SONGS) {
 
 async function downloadThumbnails(urls) {
     try {
-        const attachments = [];
+         const attachments = [];
         for (let i = 0; i < urls.length; i++) {
             const url = urls[i];
             if (!url) continue;
@@ -137,7 +152,7 @@ async function onCall({ message, args, extra = {} }) {
 
             for (let i = 0; i < items.length; i++) {
                 if (!items[i]) break;
-                 const id = items[i].id.videoId;
+                const id = items[i].id.videoId;
                 const info = await getVideoInfo(id);
                 if (!info) continue;
 
