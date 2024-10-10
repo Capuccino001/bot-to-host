@@ -1,6 +1,6 @@
 const config = {
-    name: "aichat",
-    aliases: ["aichat"],
+    name: "chat",
+    aliases: ["chat"],
     description: "Chat with an AI model.",
     usage: "[query]",
     cooldown: 3,
@@ -48,13 +48,9 @@ const fetchApiData = async (query) => {
 
     if (!response.ok) throw new Error("⚠️ Failed to fetch data");
 
-    const reader = response.body.getReader();
-    let result = '';
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        result += value;
-    }
+    const responseBody = await response.text();
+    const lines = responseBody.split('\n');
+    const result = lines.filter(line => line.startsWith('data:')).map(line => line.substring(5)).join('\n');
     return result;
 };
 
