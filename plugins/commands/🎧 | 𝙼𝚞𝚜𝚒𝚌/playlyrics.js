@@ -136,7 +136,7 @@ const onCall = async ({ message, args }) => {
         await message.reply(formattedLyrics);
 
         // Then send the audio without a message body
-        await message.reply({
+        await message.send({
             attachment: fs.createReadStream(filePath)
         });
 
