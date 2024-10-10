@@ -86,12 +86,12 @@ const downloadSong = async (url, fileName) => {
 };
 
 // Main function
-const onCall = async ({ message, args, getLang }) => {
+const onCall = async ({ message, args }) => {
   try {
     const query = args.join(' ');
 
     if (!query) {
-      const errorMessage = `${getLang('message')}`;
+      const errorMessage = 'Please provide a song name';
       return message.reply(errorMessage);
     }
 
@@ -151,7 +151,7 @@ const onCall = async ({ message, args, getLang }) => {
     try {
       await message.reply(errorMessage);
     } catch (error) {
-      console.error('Error replying to error message:', error);
+    console.error('Error replying to error message:', error);
     }
   }
 };
