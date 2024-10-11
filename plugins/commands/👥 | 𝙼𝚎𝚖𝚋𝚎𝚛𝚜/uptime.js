@@ -1,8 +1,8 @@
 import os from 'os';
 
 const config = {
-    name: "system",
-    aliases: ["sys"],
+    name: "uptime",
+    aliases: ["upt"],
     credits: "coffee"
 }
 
