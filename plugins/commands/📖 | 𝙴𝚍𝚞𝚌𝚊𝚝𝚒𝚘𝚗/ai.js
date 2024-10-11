@@ -45,32 +45,24 @@ async function onCall({ message, args }) {
         if (data && data.response) {
             await message.reply(`${header}\n${data.response}\n${footer}`);
         } else {
-            // Fallback to Mixtral API
-            try {
-                const fallbackResponse = await axios.get(`https://nash-rest-api-production.up.railway.app/Mixtral?userId=${userId}&message=${encodeURIComponent(query)}`);
-                if (fallbackResponse.data) {
-                    await message.reply(`${header}\n${fallbackResponse.data}\n${footer}`);
-                } else {
-                    await message.reply(`${header}\nSorry, I couldn't get a response from the API.\n${footer}`);
-                }
-            } catch (error) {
-                console.error("Error fetching from Mixtral API:", error);
-                await message.reply(`${header}\nAn error occurred while trying to reach the API.\n${footer}`);
-            }
+            throw new Error("No response from GPT-4 API.");
         }
     } catch (error) {
         console.error("Error fetching from GPT-4 API:", error);
-        // Fallback to Mixtral API
+
+        // Fallback to another API using senderID for userId
         try {
             const fallbackResponse = await axios.get(`https://nash-rest-api-production.up.railway.app/Mixtral?userId=${userId}&message=${encodeURIComponent(query)}`);
-            if (fallbackResponse.data) {
-                await message.reply(`${header}\n${fallbackResponse.data}\n${footer}`);
+            const fallbackData = fallbackResponse.data;
+
+            if (fallbackData && fallbackData.response) {
+                await message.reply(`${header}\n${fallbackData.response}\n${footer}`);
             } else {
-                await message.reply(`${header}\nSorry, I couldn't get a response from the API.\n${footer}`);
+                await message.reply(`${header}\nSorry, I couldn't get a response from both APIs.\n${footer}`);
             }
-        } catch (error) {
-            console.error("Error fetching from Mixtral API:", error);
-            await message.reply(`${header}\nAn error occurred while trying to reach the API.\n${footer}`);
+        } catch (fallbackError) {
+            console.error("Error fetching from fallback API:", fallbackError);
+            await message.reply(`${header}\nAn error occurred while trying to reach both APIs.\n${footer}`);
         }
     }
 }
