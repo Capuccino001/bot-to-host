@@ -38,32 +38,19 @@ async function onCall({ message, args }) {
         }
     }
 
-    // Handle text queries using the GPT-4 API
+    // Handle text queries using the new API
     try {
-        const { data } = await axios.get(`https://lorex-gpt4.onrender.com/api/gpt4?prompt=${encodeURIComponent(query)}&uid=${userId}`);
+        const apiUrl = `https://nash-rest-api-production.up.railway.app/Mixtral?userId=${userId}&message=${encodeURIComponent(query)}`;
+        const { data } = await axios.get(apiUrl);
 
         if (data && data.response) {
             await message.reply(`${header}\n${data.response}\n${footer}`);
         } else {
-            throw new Error("No response from GPT-4 API.");
+            await message.reply(`${header}\nSorry, I couldn't get a response from the API.\n${footer}`);
         }
     } catch (error) {
-        console.error("Error fetching from GPT-4 API:", error);
-
-        // Fallback to another API using senderID for userId
-        try {
-            const fallbackResponse = await axios.get(`https://nash-rest-api-production.up.railway.app/Mixtral?userId=${userId}&message=${encodeURIComponent(query)}`);
-            const fallbackData = fallbackResponse.data;
-
-            if (fallbackData && fallbackData.response) {
-                await message.reply(`${header}\n${fallbackData.response}\n${footer}`);
-            } else {
-                await message.reply(`${header}\nSorry, I couldn't get a response from both APIs.\n${footer}`);
-            }
-        } catch (fallbackError) {
-            console.error("Error fetching from fallback API:", fallbackError);
-            await message.reply(`${header}\nAn error occurred while trying to reach both APIs.\n${footer}`);
-        }
+        console.error("Error fetching from the new API:", error);
+        await message.reply(`${header}\nAn error occurred while trying to reach the API.\n${footer}`);
     }
 }
 
