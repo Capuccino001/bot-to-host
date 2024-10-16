@@ -1,28 +1,42 @@
-const axios = require('axios');
-const { sendMessage } = require('../handles/sendMessage');
-const fs = require('fs');
-
-const token = fs.readFileSync('token.txt', 'utf8');
+const { callGeminiAPI } = require('../utils/callGeminiAPI');
 
 module.exports = {
   name: 'gemini',
-  description: 'Talk to Gemini AI',
+  description: 'Interact with Gemini AI.', 
   usage: '-gemini <question>',
-  author: 'Your Name',
-  async execute(senderId, args) {
-    const pageAccessToken = token;
+  author: 'ChatGPT',
 
-    // Set a default query if none is provided
-    const query = args.join(" ") || "hi";
-
+  async execute(senderId, args, pageAccessToken, sendMessage) {
+    const prompt = args.join(' ');
     try {
-      const response = await axios.get(`https://nash-rest-api-production.up.railway.app/gemini-1.5-flash-latest?prompt=${query}`);
-      const geminiResponse = response.data.response;
+      const response = await callGeminiAPI(prompt);
 
-      await sendMessage(senderId, { text: geminiResponse }, pageAccessToken);
+      // Prepare the full response with header and footer, and trim any extra spaces
+      const header = 'ᯓ★ | 𝙶𝚎𝚖𝚒𝚗𝚒\n・───────────・\n';
+      const footer = '\n・───────────・';
+      const fullResponse = `${header}${response.trim()}${footer}`;
+
+      // Split the response into chunks if it exceeds 2000 characters
+      const maxMessageLength = 2000 - header.length - footer.length; // Adjust for header/footer length
+      if (fullResponse.length > 2000) {
+        const messages = splitMessageIntoChunks(fullResponse, maxMessageLength);
+        for (const message of messages) {
+          sendMessage(senderId, { text: message }, pageAccessToken);
+        }
+      } else {
+        sendMessage(senderId, { text: fullResponse }, pageAccessToken);
+      }
     } catch (error) {
-      console.error('Error:', error);
-      await sendMessage(senderId, { text: 'Error: Unexpected error.' }, pageAccessToken);
+      console.error('Error calling Gemini API:', error);
+      sendMessage(senderId, { text: '.' }, pageAccessToken);
     }
   }
 };
+
+function splitMessageIntoChunks(message, chunkSize) {
+  const chunks = [];
+  for (let i = 0; i < message.length; i += chunkSize) {
+    chunks.push(message.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
