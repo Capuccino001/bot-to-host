@@ -1,62 +1,36 @@
-import axios from 'axios';
+const axios = require('axios');
+const { sendMessage } = require('../handles/sendMessage');
+const fs = require('fs');
 
-const config = {
-    name: "gemini",
-    aliases: ["askgemini"],
-    description: "Interacts with the Gemini AI model.",
-    usage: "[query]",
-    cooldown: 5,
-    permissions: [0],
-    credits: "Coffee",
-};
+const token = fs.readFileSync('token.txt', 'utf8');
 
-async function onCall({ message, args }) {
-    const userId = message.senderID;
+const header = 'ᯓ★ | 𝙶𝚎𝚖𝚒𝚗𝚒\n・───────────・\n';
+const footer = '\n・──── >ᴗ< ────・';
 
-    // Default the query to "hi" if no arguments are provided
+module.exports = {
+  name: 'gemini',
+  description: 'Talk to Gemini AI',
+  author: 'Your Name',
+  async execute(senderId, args) {
+    const pageAccessToken = token;
+
+    // Set a default query if none is provided
     const query = args.join(" ") || "hi";
 
     try {
-        await message.react("🕰️");
-        const stopTypingIndicator = global.api.sendTypingIndicator(message.threadID);
+      const { response: geminiResponse } = (await axios.get(`https://nash-rest-api-production.up.railway.app/gemini-1.5-flash-latest?prompt=${query}`)).data;
 
-        if (message.messageReply && message.messageReply.attachments && message.messageReply.attachments[0]?.type === "photo") {
-            const attachment = message.messageReply.attachments[0];
-            const imageURL = attachment.url;
-
-            const geminiUrl = `https://joncll.serv00.net/chat.php?ask=${encodeURIComponent(query)}&imgurl=${encodeURIComponent(imageURL)}`;
-            const geminiResponse = await axios.get(geminiUrl);
-            const { vision } = geminiResponse.data;
-
-            stopTypingIndicator();
-
-            if (vision) {
-                await message.reply(`ᯓ★ | 𝙶𝚎𝚖𝚒𝚗𝚒\n・──────────────・\n${vision}\n・───── >ᴗ< ──────・`);
-                await message.react("✔️");
-            } else {
-                await message.reply(`ᯓ★ | 𝙶𝚎𝚖𝚒𝚗𝚒\n・──────────────・\nFailed to recognize the image.\n・───── >ᴗ< ──────・`);
-            }
-        } else {
-            const geminiUrl = `https://joncll.serv00.net/chat.php?ask=${encodeURIComponent(query)}`;
-            const geminiResponse = await axios.get(geminiUrl);
-            const { textResponse } = geminiResponse.data;
-
-            stopTypingIndicator();
-
-            if (textResponse) {
-                await message.reply(`ᯓ★ | 𝙶𝚎𝚖𝚒𝚗𝚒\n・──────────────・\n${textResponse}\n・───── >ᴗ< ──────・`);
-                await message.react("✔️");
-            } else {
-                await message.reply(`ᯓ★ | 𝙶𝚎𝚖𝚒𝚗𝚒\n・──────────────・\n⚠️ No response received from Gemini.\n・───── >ᴗ< ──────・`);
-            }
-        }
+      // Check if there is a response from the API
+      if (geminiResponse) {
+        const formattedMessage = `${header}${geminiResponse}${footer}`;
+        await sendMessage(senderId, { text: formattedMessage }, pageAccessToken);
+      } else {
+        console.error('Error: No response available');
+        await sendMessage(senderId, { text: 'Error: No response available.' }, pageAccessToken);
+      }
     } catch (error) {
-        console.error("Gemini API call failed: ", error);
-        await message.reply(`ᯓ★ | 𝙶𝚎𝚖𝚒𝚗𝚒\n・──────────────・\n⚠️ Sorry, I couldn't execute the command. Please try again later.\n・───── >ᴗ< ──────・`);
+      console.error('Error:', error);
+      await sendMessage(senderId, { text: 'Error: Unexpected error.' }, pageAccessToken);
     }
-}
-
-export default {
-    config,
-    onCall,
+  }
 };
