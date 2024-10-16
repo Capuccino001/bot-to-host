@@ -10,7 +10,7 @@ const footer = '\n・──── >ᴗ< ────・';
 module.exports = {
   name: 'gemini',
   description: 'Talk to Gemini AI',
-  usage: '-gemini',
+  usage: '-gemini <question>',
   author: 'Your Name',
   async execute(senderId, args) {
     const pageAccessToken = token;
